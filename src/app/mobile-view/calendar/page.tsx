@@ -10,7 +10,7 @@ export default function MobileCalendarPage() {
       <div className="relative z-[100]">
         <MobileCalendarTopAppBar />
 
-        <main className=" px-4 max-w-md mx-auto">
+        <main className="pt-24 px-4 max-w-md mx-auto">
           {/* Date & Count Header */}
           <div className="flex justify-between items-end mb-6">
             <div>

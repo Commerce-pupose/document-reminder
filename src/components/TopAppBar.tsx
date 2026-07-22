@@ -1,6 +1,6 @@
 export default function TopAppBar() {
   return (
-    <header className="md:pl-[220px] sticky top-0 z-40 backdrop-blur-[40px] border-b border-white/10 bg-surface/40 flex justify-between items-center px-card-padding py-4">
+    <header className="hidden md:flex md:pl-[220px] sticky top-0 z-40 backdrop-blur-[40px] border-b border-white/10 bg-surface/40 justify-between items-center px-card-padding py-4">
       <div className="flex items-center gap-8 flex-1">
         <div className="max-w-[700px] w-full relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>

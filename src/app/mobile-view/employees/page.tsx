@@ -14,7 +14,7 @@ export default function MobileEmployeesPage() {
       <div className="relative z-[100]">
         <MobileEmployeesTopAppBar />
 
-        <main className=" px-4 max-w-md mx-auto space-y-6">
+        <main className="pt-24 px-4 max-w-md mx-auto space-y-6">
           {/* Search Section */}
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>

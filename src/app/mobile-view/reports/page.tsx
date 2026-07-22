@@ -10,7 +10,7 @@ export default function MobileReportsPage() {
       <div className="relative z-[100]">
         <MobileReportsTopAppBar />
 
-        <main className=" px-4 max-w-md mx-auto space-y-6">
+        <main className="pt-24 px-4 max-w-md mx-auto space-y-6">
           {/* Filter Chips */}
           <section className="flex gap-3 overflow-x-auto hide-scrollbar py-2 -mx-2 px-2">
             <button className="px-6 py-2 rounded-full bg-primary text-white text-xs font-bold shadow-lg shadow-primary/20 shrink-0">All</button>

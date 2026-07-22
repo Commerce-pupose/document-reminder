@@ -25,12 +25,14 @@ export default function ResponsiveRedirect() {
         else if (pathname === "/employees") router.replace("/mobile-view/employees");
         else if (pathname === "/calendar") router.replace("/mobile-view/calendar");
         else if (pathname === "/reports") router.replace("/mobile-view/reports");
+        else if (pathname === "/settings") router.replace("/mobile-view/settings");
       } else if (!isMobile && isMobileRoute) {
         // Map mobile to desktop routes
         if (pathname === "/mobile-view") router.replace("/");
         else if (pathname === "/mobile-view/employees") router.replace("/employees");
         else if (pathname === "/mobile-view/calendar") router.replace("/calendar");
         else if (pathname === "/mobile-view/reports") router.replace("/reports");
+        else if (pathname === "/mobile-view/settings") router.replace("/settings");
       }
     };
 

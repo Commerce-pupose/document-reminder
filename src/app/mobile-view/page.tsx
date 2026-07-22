@@ -12,7 +12,7 @@ export default function MobileDashboard() {
       <div className="relative z-[100]">
         <MobileTopAppBar />
 
-        <main className=" px-4 max-w-md mx-auto space-y-8">
+        <main className="pt-24 px-4 max-w-md mx-auto space-y-8">
           {/* Summary Hero Card */}
           <section className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-[24px] p-6 shadow-sm relative overflow-hidden">
             <div className="flex justify-between items-start mb-4">
