@@ -26,9 +26,9 @@ export default function MobileBottomNavBar() {
         <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'wght' 600" }}>add</span>
       </button>
       
-      <Link href="/mobile-view/calendar" className={`flex flex-col items-center justify-center w-12 h-12 transition-transform ${isCalendar ? 'bg-primary/10 text-primary rounded-full shadow-sm scale-110' : 'text-on-surface-variant/70 hover:scale-110 active:text-primary'}`}>
-        <span className="material-symbols-outlined text-[24px]" style={isCalendar ? { fontVariationSettings: "'FILL' 1" } : {}}>calendar_month</span>
-        <span className="text-[10px] font-medium mt-1">Calendar</span>
+      <Link href="/mobile-view/documents" className={`flex flex-col items-center justify-center w-12 h-12 transition-transform ${pathname === "/mobile-view/documents" ? 'bg-primary/10 text-primary rounded-full shadow-sm scale-110' : 'text-on-surface-variant/70 hover:scale-110 active:text-primary'}`}>
+        <span className="material-symbols-outlined text-[24px]" style={pathname === "/mobile-view/documents" ? { fontVariationSettings: "'FILL' 1" } : {}}>description</span>
+        <span className="text-[10px] font-medium mt-1">Documents</span>
       </Link>
       
       <Link href="/mobile-view/settings" className={`flex flex-col items-center justify-center w-12 h-12 transition-transform ${isSettings ? 'bg-primary/10 text-primary rounded-full shadow-sm scale-110' : 'text-on-surface-variant/70 hover:scale-110 active:text-primary'}`}>

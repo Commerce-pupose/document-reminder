@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function MobileTopAppBar() {
   return (
     <header className="fixed top-0 left-0 w-full z-[110] backdrop-blur-xl bg-surface/60 flex justify-between items-center px-4 py-4 border-b border-white/20">
@@ -10,9 +12,14 @@ export default function MobileTopAppBar() {
           <p className="font-body-md text-xs text-on-surface-variant">Documents are under control.</p>
         </div>
       </div>
-      <button className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:opacity-80 transition-opacity active:scale-95">
-        <span className="material-symbols-outlined">notifications</span>
-      </button>
+      <div className="flex gap-2">
+        <Link href="/mobile-view/calendar" className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">
+          <span className="material-symbols-outlined">calendar_month</span>
+        </Link>
+        <button className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">
+          <span className="material-symbols-outlined">notifications</span>
+        </button>
+      </div>
     </header>
   );
 }

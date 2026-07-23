@@ -7,7 +7,7 @@ export default function ReportsPage() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h2 className="font-headline-lg text-headline-lg text-on-background">Reports & Analytics</h2>
+            <h2 className="font-headline-lg text-headline-lg text-on-background"> Reports & Analytics</h2>
             <p className="text-[14px] md:text-[16px] text-on-surface-variant font-medium mt-1 opacity-70">Strategic insights into organizational compliance and document health.</p>
           </div>
           <div className="flex items-center gap-3 glass-panel px-4 py-2 rounded-xl border border-white/20 shadow-sm backdrop-blur-md">

@@ -32,7 +32,7 @@ export default function RootLayout({
         <ResponsiveRedirect />
         <Sidebar />
         <TopAppBar />
-        <main className="md:pl-[220px] flex flex-col min-h-screen">
+        <main className="md:pl-[280px] flex flex-col min-h-screen">
           {children}
         </main>
       </body>

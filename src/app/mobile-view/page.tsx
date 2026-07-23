@@ -57,10 +57,10 @@ export default function MobileDashboard() {
               <span className="font-bold text-[10px] text-on-surface-variant text-center leading-tight">Add<br />Employee</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <button className="w-[60px] h-[60px] bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl flex items-center justify-center text-tertiary shadow-sm hover:scale-105 active:scale-95 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">domain</span>
-              </button>
-              <span className="font-bold text-[10px] text-on-surface-variant text-center leading-tight">Depts</span>
+              <Link href="/mobile-view/config" className="w-[60px] h-[60px] bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl flex items-center justify-center text-tertiary shadow-sm hover:scale-105 active:scale-95 transition-transform">
+                <span className="material-symbols-outlined text-[28px]">tune</span>
+              </Link>
+              <span className="font-bold text-[10px] text-on-surface-variant text-center leading-tight">Config</span>
             </div>
             <div className="flex flex-col items-center gap-2">
               <Link href="/mobile-view/reports" className="w-[60px] h-[60px] bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl flex items-center justify-center text-secondary shadow-sm hover:scale-105 active:scale-95 transition-transform">
