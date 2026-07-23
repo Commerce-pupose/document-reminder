@@ -1,5 +1,7 @@
 import MobileEmployeesTopAppBar from "../components/MobileEmployeesTopAppBar";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
+import { cn } from "@/lib/cn";
+import { typography } from "@/config/typography";
 
 export default function MobileEmployeesPage() {
   return (
@@ -19,7 +21,7 @@ export default function MobileEmployeesPage() {
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
             <input
-              className="w-full h-14 pl-12 pr-4 bg-white/40 backdrop-blur-xl border border-white/60 rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-md placeholder:text-outline-variant outline-none shadow-sm"
+              className={cn(typography.body.md, "w-full h-14 pl-12 pr-4 bg-white/40 backdrop-blur-xl border border-white/60 rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-outline-variant outline-none shadow-sm")}
               placeholder="Find team members..."
               type="text"
             />
@@ -27,18 +29,18 @@ export default function MobileEmployeesPage() {
 
           {/* Department Filters */}
           <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-4 px-4 py-2">
-            <button className="px-6 py-2.5 rounded-full bg-primary text-white shadow-lg shadow-primary/20 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform">All</button>
-            <button className="px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant font-bold text-xs whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60">Design</button>
-            <button className="px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant font-bold text-xs whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60">Engineering</button>
-            <button className="px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant font-bold text-xs whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60">Marketing</button>
-            <button className="px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant font-bold text-xs whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60">Sales</button>
+            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full bg-primary text-white shadow-lg shadow-primary/20 whitespace-nowrap active:scale-95 transition-transform")}>All</button>
+            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60")}>Design</button>
+            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60")}>Engineering</button>
+            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60")}>Marketing</button>
+            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant whitespace-nowrap active:scale-95 transition-transform hover:bg-white/60")}>Sales</button>
           </div>
 
           {/* Staff List Section */}
           <section className="space-y-4">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="font-bold text-xl text-on-surface">Team Directory</h2>
-              <span className="font-bold text-xs text-outline">24 Total</span>
+              <h2 className={cn(typography.heading.h2, "text-on-surface")}>Team Directory</h2>
+              <span className={cn(typography.caption.md, "text-outline font-bold")}>24 Total</span>
             </div>
 
             {/* Employee Card 1 */}
@@ -50,11 +52,11 @@ export default function MobileEmployeesPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-on-surface">Alex Rivers</h3>
-                  <p className="font-bold text-[10px] text-outline uppercase tracking-wider">ID: #EMP-9021</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Alex Rivers</h3>
+                  <p className={cn(typography.body.md, "text-outline")}>ID: #EMP-9021</p>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-blue-100/50 text-blue-700 rounded text-[10px] font-bold uppercase tracking-tight">Engineering</span>
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-primary">
+                    <span className={cn(typography.label.sm, "px-2 py-0.5 bg-blue-100/50 text-blue-700 rounded")}>Engineering</span>
+                    <span className={cn(typography.label.sm, "flex items-center gap-1 text-primary font-bold")}>
                       <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_rgba(70,72,212,0.6)]"></span>
                       VALID
                     </span>
@@ -73,11 +75,11 @@ export default function MobileEmployeesPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-on-surface">Elena Chen</h3>
-                  <p className="font-bold text-[10px] text-outline uppercase tracking-wider">ID: #EMP-4423</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Elena Chen</h3>
+                  <p className={cn(typography.body.md, "text-outline")}>ID: #EMP-4423</p>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-purple-100/50 text-purple-700 rounded text-[10px] font-bold uppercase tracking-tight">Design</span>
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-error">
+                    <span className={cn(typography.label.sm, "px-2 py-0.5 bg-purple-100/50 text-purple-700 rounded")}>Design</span>
+                    <span className={cn(typography.label.sm, "flex items-center gap-1 text-error font-bold")}>
                       <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
                       EXPIRED
                     </span>
@@ -96,11 +98,11 @@ export default function MobileEmployeesPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-on-surface">Marcus Thorne</h3>
-                  <p className="font-bold text-[10px] text-outline uppercase tracking-wider">ID: #EMP-8102</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Marcus Thorne</h3>
+                  <p className={cn(typography.body.md, "text-outline")}>ID: #EMP-8102</p>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-gray-200/50 text-gray-700 rounded text-[10px] font-bold uppercase tracking-tight">Marketing</span>
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500">
+                    <span className={cn(typography.label.sm, "px-2 py-0.5 bg-gray-200/50 text-gray-700 rounded")}>Marketing</span>
+                    <span className={cn(typography.label.sm, "flex items-center gap-1 text-amber-500 font-bold")}>
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                       EXPIRING SOON
                     </span>
@@ -119,11 +121,11 @@ export default function MobileEmployeesPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-on-surface">Sarah Jenkins</h3>
-                  <p className="font-bold text-[10px] text-outline uppercase tracking-wider">ID: #EMP-2209</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Sarah Jenkins</h3>
+                  <p className={cn(typography.body.md, "text-outline")}>ID: #EMP-2209</p>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-gray-200/50 text-gray-700 rounded text-[10px] font-bold uppercase tracking-tight">Staff</span>
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-primary">
+                    <span className={cn(typography.label.sm, "px-2 py-0.5 bg-gray-200/50 text-gray-700 rounded")}>Staff</span>
+                    <span className={cn(typography.label.sm, "flex items-center gap-1 text-primary font-bold")}>
                       <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                       VALID
                     </span>

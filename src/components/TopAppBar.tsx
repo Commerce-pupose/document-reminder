@@ -1,17 +1,27 @@
+import { cn } from "@/lib/cn";
+import { typography } from "@/config/typography";
+
 export default function TopAppBar() {
   return (
     <header className="hidden md:flex md:pl-[300px] sticky top-0 z-40 backdrop-blur-[40px] border-b border-white/10 bg-surface/40 justify-between items-center px-card-padding py-4">
       <div className="flex items-center gap-8 flex-1">
         <div className="max-w-[700px] w-full relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-          <input className="w-full h-14 pl-12 pr-4 bg-white/20 border-none rounded-full focus:ring-2 focus:ring-primary/20 placeholder:text-outline text-sm transition-all" placeholder="Search employees, documents..." type="text" />
+          <input
+            className={cn(
+              typography.body.md,
+              "w-full h-14 pl-12 pr-4 bg-white/20 border-none rounded-full focus:ring-2 focus:ring-primary/20 placeholder:text-outline transition-all"
+            )}
+            placeholder="Search employees, documents..."
+            type="text"
+          />
         </div>
       </div>
 
       <div className="flex items-center gap-6">
         <button className="relative hover:opacity-80 transition-opacity">
           <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-error text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white">3</span>
+          <span className={cn(typography.caption.sm, "absolute -top-1 -right-1 w-4 h-4 bg-error text-white flex items-center justify-center rounded-full border-2 border-white font-bold")}>3</span>
         </button>
         <button className="hover:opacity-80 transition-opacity">
           <span className="material-symbols-outlined text-on-surface-variant">help</span>

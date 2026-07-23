@@ -1,11 +1,14 @@
+import { cn } from "@/lib/cn";
+import { typography } from "@/config/typography";
+
 export default function SettingsPage() {
   return (
     <div className="px-6 md:px-12 py-10 max-w-[1400px] mx-auto w-full space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-background">Settings</h2>
-          <p className="text-sm sm:text-body-lg text-on-surface-variant mt-1">Manage your profile, preferences, and account security.</p>
+          <h2 className={cn(typography.heading.h1, "text-on-background")}>Settings</h2>
+          <p className={cn(typography.body.lg, "text-on-surface-variant mt-1")}>Manage your profile, preferences, and account security.</p>
         </div>
       </div>
 
@@ -26,13 +29,13 @@ export default function SettingsPage() {
           </button>
         </div>
         <div className="flex-grow text-center md:text-left">
-          <h2 className="font-display text-2xl sm:text-[32px] text-on-surface font-bold">Sarah Jenkins</h2>
-          <p className="font-body-lg text-sm sm:text-base text-on-surface-variant mb-6">HR Director • Global Operations</p>
+          <h2 className={cn(typography.heading.h1, "text-on-surface")}>Sarah Jenkins</h2>
+          <p className={cn(typography.body.lg, "text-on-surface-variant mb-6")}>HR Director • Global Operations</p>
           <div className="flex flex-wrap justify-center md:justify-start gap-3">
-            <button className="bg-primary text-white px-6 py-2.5 rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+            <button className={cn(typography.button.md, "bg-primary text-white px-6 py-2.5 rounded-full hover:opacity-90 transition-opacity")}>
               Edit Profile
             </button>
-            <button className="border border-outline-variant/50 text-on-surface px-6 py-2.5 rounded-full font-bold text-sm hover:bg-white/40 transition-colors">
+            <button className={cn(typography.button.md, "border border-outline-variant/50 text-on-surface px-6 py-2.5 rounded-full hover:bg-white/40 transition-colors")}>
               View Public Profile
             </button>
           </div>
@@ -44,20 +47,20 @@ export default function SettingsPage() {
         <section className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">security</span>
-            <h3 className="font-headline-md text-xl sm:text-[24px] font-bold">Account Security</h3>
+            <h3 className={cn(typography.heading.h2, "text-on-surface")}>Account Security</h3>
           </div>
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/40 rounded-xl gap-4">
               <div>
-                <p className="font-bold text-sm sm:text-base text-on-surface">Password</p>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">Last changed 3 months ago</p>
+                <p className={cn(typography.body.lg, "font-bold text-on-surface")}>Password</p>
+                <p className={cn(typography.caption.md, "mt-1")}>Last changed 3 months ago</p>
               </div>
-              <button className="text-primary font-bold text-sm hover:underline self-start sm:self-auto">Change</button>
+              <button className={cn(typography.button.md, "text-primary hover:underline self-start sm:self-auto")}>Change</button>
             </div>
             <div className="flex items-center justify-between p-4 bg-white/40 rounded-xl gap-4">
               <div>
-                <p className="font-bold text-sm sm:text-base text-on-surface">Two-Factor Auth</p>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">Add an extra layer of security</p>
+                <p className={cn(typography.body.lg, "font-bold text-on-surface")}>Two-Factor Auth</p>
+                <p className={cn(typography.caption.md, "mt-1")}>Add an extra layer of security</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -71,31 +74,31 @@ export default function SettingsPage() {
         <section className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">notifications_active</span>
-            <h3 className="font-headline-md text-xl sm:text-[24px] font-bold">Notifications</h3>
+            <h3 className={cn(typography.heading.h2, "text-on-surface")}>Notifications</h3>
           </div>
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm sm:text-base text-on-surface">Email Notifications</span>
+              <span className={cn(typography.body.lg, "font-medium text-on-surface")}>Email Notifications</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" defaultChecked className="sr-only peer" />
                 <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
               </label>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm sm:text-base text-on-surface">Push Notifications</span>
+              <span className={cn(typography.body.lg, "font-medium text-on-surface")}>Push Notifications</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" defaultChecked className="sr-only peer" />
                 <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
               </label>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm sm:text-base text-on-surface">Desktop Notifications</span>
+              <span className={cn(typography.body.lg, "font-medium text-on-surface")}>Desktop Notifications</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" />
                 <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
               </label>
             </div>
-            <p className="text-xs sm:text-sm text-on-surface-variant pt-3 border-t border-white/30">
+            <p className={cn(typography.caption.md, "pt-3 border-t border-white/30")}>
               Alerts include: document expiries, system updates, and leave requests.
             </p>
           </div>
@@ -105,21 +108,21 @@ export default function SettingsPage() {
         <section className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">tune</span>
-            <h3 className="font-headline-md text-xl sm:text-[24px] font-bold">App Preferences</h3>
+            <h3 className={cn(typography.heading.h2, "text-on-surface")}>App Preferences</h3>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs sm:text-sm font-bold text-on-surface-variant uppercase tracking-wider">Theme</label>
-                <select className="w-full bg-white/40 border border-white/50 rounded-xl text-sm font-medium px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none">
+                <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>Theme</label>
+                <select className={cn(typography.body.md, "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none font-medium")}>
                   <option>Light</option>
                   <option>Dark</option>
                   <option>System</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs sm:text-sm font-bold text-on-surface-variant uppercase tracking-wider">Language</label>
-                <select className="w-full bg-white/40 border border-white/50 rounded-xl text-sm font-medium px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none">
+                <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>Language</label>
+                <select className={cn(typography.body.md, "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none font-medium")}>
                   <option>English</option>
                   <option>Spanish</option>
                   <option>French</option>
@@ -128,8 +131,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="space-y-2 pt-2">
-              <label className="text-xs sm:text-sm font-bold text-on-surface-variant uppercase tracking-wider">Currency</label>
-              <select className="w-full bg-white/40 border border-white/50 rounded-xl text-sm font-medium px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none">
+              <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>Currency</label>
+              <select className={cn(typography.body.md, "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none font-medium")}>
                 <option>USD ($)</option>
                 <option>EUR (€)</option>
                 <option>GBP (£)</option>
@@ -144,9 +147,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-[28px]">credit_card</span>
-              <h3 className="font-headline-md text-xl sm:text-[24px] font-bold">Subscription</h3>
+              <h3 className={cn(typography.heading.h2, "text-on-surface")}>Subscription</h3>
             </div>
-            <span className="bg-primary-container text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm">
+            <span className={cn(typography.label.sm, "bg-primary-container text-white px-4 py-1.5 rounded-full shadow-sm")}>
               Enterprise Plan
             </span>
           </div>
@@ -154,13 +157,13 @@ export default function SettingsPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div className="relative z-10">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-bold text-on-surface">Monthly Billing</span>
-                <span className="text-2xl font-bold text-primary">$499.00</span>
+                <span className={cn(typography.body.lg, "font-bold text-on-surface")}>Monthly Billing</span>
+                <span className={cn(typography.number.medium, "text-primary")}>$499.00</span>
               </div>
-              <p className="text-xs text-on-surface-variant font-medium">Next billing date: Oct 24, 2026</p>
+              <p className={cn(typography.caption.md)}>Next billing date: Oct 24, 2026</p>
             </div>
           </div>
-          <button className="w-full py-3 bg-on-surface text-white rounded-xl font-bold text-sm shadow-md hover:bg-on-surface/90 transition-colors active:scale-[0.98]">
+          <button className={cn(typography.button.lg, "w-full py-3 bg-on-surface text-white rounded-xl shadow-md hover:bg-on-surface/90 transition-colors active:scale-[0.98]")}>
             Manage Billing
           </button>
         </section>
@@ -168,8 +171,8 @@ export default function SettingsPage() {
 
       {/* Footer Info */}
       <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4 pt-6 border-t border-white/20">
-        <p className="text-xs text-on-surface-variant font-medium">© 2026 HR Harmony Cloud Solutions. All rights reserved.</p>
-        <div className="flex gap-4 md:gap-6 text-xs font-bold text-on-surface-variant">
+        <p className={cn(typography.caption.md)}>© 2026 HR Harmony Cloud Solutions. All rights reserved.</p>
+        <div className={cn(typography.button.sm, "flex gap-4 md:gap-6 text-on-surface-variant")}>
           <a className="hover:text-primary transition-colors" href="#">Privacy Policy</a>
           <a className="hover:text-primary transition-colors" href="#">Terms of Service</a>
           <a className="hover:text-primary transition-colors" href="#">Data Security</a>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cn } from "@/lib/cn";
+import { typography } from "@/config/typography";
 
 export default function MobileTopAppBar() {
   return (
@@ -8,12 +10,12 @@ export default function MobileTopAppBar() {
           <img className="w-full h-full object-cover rounded-full" alt="Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcCn6ZnNi3F-RdMwYLJy2w6HjMKVQlf6RdCQHQZ4uqBfzH-96oXtLC0NdBXMYrozZawNjhH-yqC-5vpqWeWVJWWJAY6r7JorZRS3nz9uFUz17dTi987GRXuqCSg_IwuwP5oqyxxgEInQ2Jg9CQkoq8vPI0_vk9LztpDWsvF7Bk0Wl5b8QyDZk6Sy9FDy5X-ldXP6hPCoYFKZF9XbfcJbNuiLa35Wd5ECuZxnYbFU5pbEyHqwRjpPSONHI8sE8rnNa80QbNdPpBjwM" />
         </div>
         <div>
-          <h1 className="font-headline-md text-[18px] font-bold text-on-surface leading-tight">Good Morning, HR</h1>
-          <p className="font-body-md text-xs text-on-surface-variant">Documents are under control.</p>
+          <h1 className={cn(typography.heading.h3, "text-on-surface leading-tight")}>Good Morning, HR</h1>
+          <p className={cn(typography.body.md, "text-on-surface-variant")}>Documents are under control.</p>
         </div>
       </div>
       <div className="flex gap-2">
-        <Link href="/mobile-view/calendar" className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">
+        <Link href="/calendar" className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">
           <span className="material-symbols-outlined">calendar_month</span>
         </Link>
         <button className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">

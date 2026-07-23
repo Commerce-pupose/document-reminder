@@ -69,44 +69,6 @@
   --font-body-lg: "Plus Jakarta Sans", sans-serif;
 }
 
-@utility text-label-sm {
-  font-size: 11px;
-  line-height: 14px;
-  letter-spacing: 0.02em;
-  font-weight: 600;
-}
-@utility text-headline-lg {
-  font-size: 24px;
-  line-height: 32px;
-  letter-spacing: -0.01em;
-  font-weight: 700;
-}
-@utility text-headline-md {
-  font-size: 18px;
-  line-height: 26px;
-  font-weight: 700;
-}
-@utility text-display {
-  font-size: 32px;
-  line-height: 40px;
-  letter-spacing: -0.02em;
-  font-weight: 800;
-}
-@utility text-headline-lg-mobile {
-  font-size: 20px;
-  line-height: 28px;
-  font-weight: 700;
-}
-@utility text-body-md {
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 500;
-}
-@utility text-body-lg {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 500;
-}
 
 @utility glass-panel {
   background: rgba(255, 255, 255, 0.4);

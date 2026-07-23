@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
+import { cn } from "@/lib/cn";
+import { typography } from "@/config/typography";
 
 export default function MobileConfigPage() {
   const [activeTab, setActiveTab] = useState<"branches" | "departments" | "documents">("branches");
@@ -12,38 +14,33 @@ export default function MobileConfigPage() {
       {/* Top App Bar */}
       <header className="fixed top-0 left-0 w-full z-[110] bg-surface/60 backdrop-blur-2xl border-b border-white/20 shadow-sm flex justify-between items-center px-4 py-4">
         <div className="flex items-center gap-3">
-          <Link href="/mobile-view" className="w-10 h-10 flex items-center justify-center rounded-full bg-white/40 border border-white/30 backdrop-blur-md hover:opacity-80 transition-opacity active:scale-95 shadow-sm">
+          <Link href="/" className="w-10 h-10 flex items-center justify-center rounded-full bg-white/40 border border-white/30 backdrop-blur-md hover:opacity-80 transition-opacity active:scale-95 shadow-sm">
             <span className="material-symbols-outlined text-primary">arrow_back_ios_new</span>
           </Link>
-          <span className="font-bold text-[20px] text-primary">System Config</span>
+          <h1 className={cn(typography.heading.h2, "text-primary")}>System Config</h1>
         </div>
       </header>
 
       <main className="px-container-margin">
-        {/* Header Section
-        <section className="mb-section-spacing">
-          <h2 className="font-headline-lg-mobile text-headline-lg-mobile lg:text-headline-lg font-extrabold text-on-surface">System Config</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Manage global organizational entities and parameters.</p>
-        </section> */}
 
         {/* Segmented Control (Tabs) */}
         <div className="mb-8 sticky top-[10px] z-40">
           <div className="glass-card p-1.5 rounded-xl flex items-center relative overflow-hidden bg-white/40 backdrop-blur-md border border-white/50">
             <button
               onClick={() => setActiveTab("branches")}
-              className={`relative z-10 flex-1 py-3 font-label-sm text-label-sm font-bold transition-colors ${activeTab === "branches" ? "text-primary" : "text-on-surface-variant"}`}
+              className={cn(typography.button.sm, "relative z-10 flex-1 py-3 transition-colors", activeTab === "branches" ? "text-primary font-bold" : "text-on-surface-variant")}
             >
               Branches
             </button>
             <button
               onClick={() => setActiveTab("departments")}
-              className={`relative z-10 flex-1 py-3 font-label-sm text-label-sm font-bold transition-colors ${activeTab === "departments" ? "text-primary" : "text-on-surface-variant"}`}
+              className={cn(typography.button.sm, "relative z-10 flex-1 py-3 transition-colors", activeTab === "departments" ? "text-primary font-bold" : "text-on-surface-variant")}
             >
               Departments
             </button>
             <button
               onClick={() => setActiveTab("documents")}
-              className={`relative z-10 flex-1 py-3 font-label-sm text-label-sm font-bold transition-colors ${activeTab === "documents" ? "text-primary" : "text-on-surface-variant"}`}
+              className={cn(typography.button.sm, "relative z-10 flex-1 py-3 transition-colors", activeTab === "documents" ? "text-primary font-bold" : "text-on-surface-variant")}
             >
               Doc Types
             </button>
@@ -62,8 +59,8 @@ export default function MobileConfigPage() {
         {activeTab === "branches" && (
           <div className="flex flex-col gap-stack-gap animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-headline-md text-headline-md text-on-surface">3 Branches</h4>
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full font-label-sm text-label-sm shadow-lg shadow-primary/20">
+              <h4 className={cn(typography.heading.h3, "text-on-surface")}>3 Branches</h4>
+              <button className={cn(typography.button.sm, "flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full shadow-lg shadow-primary/20")}>
                 <span className="material-symbols-outlined text-[18px]">add</span> Add Branch
               </button>
             </div>
@@ -74,8 +71,8 @@ export default function MobileConfigPage() {
                   <span className="material-symbols-outlined">location_city</span>
                 </div>
                 <div>
-                  <p className="font-body-lg text-body-lg font-bold text-on-surface">New York HQ</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">124 Employees • Main Hub</p>
+                  <p className={cn(typography.heading.h4, "text-on-surface")}>New York HQ</p>
+                  <p className={cn(typography.caption.md, "text-on-surface-variant")}>124 Employees • Main Hub</p>
                 </div>
               </div>
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-white/20 shrink-0">
@@ -89,8 +86,8 @@ export default function MobileConfigPage() {
                   <span className="material-symbols-outlined">apartment</span>
                 </div>
                 <div>
-                  <p className="font-body-lg text-body-lg font-bold text-on-surface">London Office</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">42 Employees • Regional</p>
+                  <p className={cn(typography.heading.h4, "text-on-surface")}>London Office</p>
+                  <p className={cn(typography.caption.md, "text-on-surface-variant")}>42 Employees • Regional</p>
                 </div>
               </div>
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant shrink-0">
@@ -104,8 +101,8 @@ export default function MobileConfigPage() {
                   <span className="material-symbols-outlined">storefront</span>
                 </div>
                 <div>
-                  <p className="font-body-lg text-body-lg font-bold text-on-surface">Tokyo Satellite</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">18 Employees • Branch</p>
+                  <p className={cn(typography.heading.h4, "text-on-surface")}>Tokyo Satellite</p>
+                  <p className={cn(typography.caption.md, "text-on-surface-variant")}>18 Employees • Branch</p>
                 </div>
               </div>
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant shrink-0">
@@ -119,8 +116,8 @@ export default function MobileConfigPage() {
         {activeTab === "departments" && (
           <div className="flex flex-col gap-stack-gap animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-headline-md text-headline-md text-on-surface">8 Departments</h4>
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full font-label-sm text-label-sm shadow-lg shadow-primary/20">
+              <h4 className={cn(typography.heading.h3, "text-on-surface")}>8 Departments</h4>
+              <button className={cn(typography.button.sm, "flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full shadow-lg shadow-primary/20")}>
                 <span className="material-symbols-outlined text-[18px]">add</span> Add Dept
               </button>
             </div>
@@ -131,8 +128,8 @@ export default function MobileConfigPage() {
                   <span className="material-symbols-outlined">engineering</span>
                 </div>
                 <div>
-                  <p className="font-body-lg text-body-lg font-bold text-on-surface">Engineering</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">Product Development</p>
+                  <p className={cn(typography.heading.h4, "text-on-surface")}>Engineering</p>
+                  <p className={cn(typography.caption.md, "text-on-surface-variant")}>Product Development</p>
                 </div>
               </div>
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant shrink-0">
@@ -146,8 +143,8 @@ export default function MobileConfigPage() {
                   <span className="material-symbols-outlined">palette</span>
                 </div>
                 <div>
-                  <p className="font-body-lg text-body-lg font-bold text-on-surface">Design</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">Brand & UX</p>
+                  <p className={cn(typography.heading.h4, "text-on-surface")}>Design</p>
+                  <p className={cn(typography.caption.md, "text-on-surface-variant")}>Brand & UX</p>
                 </div>
               </div>
               <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant shrink-0">
@@ -161,8 +158,8 @@ export default function MobileConfigPage() {
         {activeTab === "documents" && (
           <div className="flex flex-col gap-stack-gap animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-headline-md text-headline-md text-on-surface">5 Doc Types</h4>
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full font-label-sm text-label-sm shadow-lg shadow-primary/20">
+              <h4 className={cn(typography.heading.h3, "text-on-surface")}>5 Doc Types</h4>
+              <button className={cn(typography.button.sm, "flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full shadow-lg shadow-primary/20")}>
                 <span className="material-symbols-outlined text-[18px]">add</span> Add Type
               </button>
             </div>
@@ -173,12 +170,12 @@ export default function MobileConfigPage() {
                   <span className="material-symbols-outlined">description</span>
                 </div>
                 <div>
-                  <p className="font-body-lg text-body-lg font-bold text-on-surface">Contract</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">Legal Employment Documents</p>
+                  <p className={cn(typography.heading.h4, "text-on-surface")}>Contract</p>
+                  <p className={cn(typography.caption.md, "text-on-surface-variant")}>Legal Employment Documents</p>
                 </div>
               </div>
               <div className="flex gap-2 items-center">
-                <div className="px-2 py-1 bg-primary/10 text-primary rounded text-[10px] font-bold h-fit">REQUIRED</div>
+                <div className={cn(typography.label.sm, "px-2 py-1 bg-primary/10 text-primary rounded h-fit font-bold")}>REQUIRED</div>
                 <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant shrink-0">
                   <span className="material-symbols-outlined">edit</span>
                 </button>

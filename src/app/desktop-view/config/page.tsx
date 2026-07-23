@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { cn } from "@/lib/cn";
+import { typography } from "@/config/typography";
 
 // Types
 interface Branch {
@@ -69,17 +71,17 @@ function Modal({ title, onClose, onSave, children, accentColor = "#4648d4" }: Mo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-headline-md font-bold text-on-surface">{title}</h3>
+          <h3 className={cn(typography.heading.h2, "text-on-surface")}>{title}</h3>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
         {children}
         <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-colors">
+          <button onClick={onClose} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container transition-colors")}>
             Cancel
           </button>
-          <button onClick={onSave} style={{ backgroundColor: accentColor }} className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity active:scale-[0.98] shadow-lg">
+          <button onClick={onSave} style={{ backgroundColor: accentColor }} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl text-white hover:opacity-90 transition-opacity active:scale-[0.98] shadow-lg")}>
             Save
           </button>
         </div>
@@ -104,14 +106,14 @@ function DeleteDialog({ itemName, onClose, onConfirm }: DeleteDialogProps) {
           <span className="material-symbols-outlined text-error">delete_forever</span>
         </div>
         <div className="text-center">
-          <h3 className="font-bold text-on-surface text-lg">Delete &quot;{itemName}&quot;?</h3>
-          <p className="text-sm text-on-surface-variant mt-1">This action cannot be undone.</p>
+          <h3 className={cn(typography.heading.h3, "text-on-surface")}>Delete &quot;{itemName}&quot;?</h3>
+          <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>This action cannot be undone.</p>
         </div>
         <div className="flex gap-3 pt-1">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-colors">
+          <button onClick={onClose} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container transition-colors")}>
             Cancel
           </button>
-          <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-error text-white font-bold text-sm hover:opacity-90 transition-opacity active:scale-[0.98]">
+          <button onClick={onConfirm} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl bg-error text-white hover:opacity-90 transition-opacity active:scale-[0.98]")}>
             Delete
           </button>
         </div>
@@ -215,12 +217,12 @@ export default function ConfigPage() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Branch Name *</label>
-              <input className={inputCls} placeholder="e.g. Dubai HQ" value={branchForm.name} onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })} />
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Branch Name *</label>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Dubai HQ" value={branchForm.name} onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Subtitle / Location</label>
-              <input className={inputCls} placeholder="e.g. Regional Hub" value={branchForm.subtitle} onChange={(e) => setBranchForm({ ...branchForm, subtitle: e.target.value })} />
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Subtitle / Location</label>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Regional Hub" value={branchForm.subtitle} onChange={(e) => setBranchForm({ ...branchForm, subtitle: e.target.value })} />
             </div>
           </div>
         </Modal>
@@ -235,15 +237,15 @@ export default function ConfigPage() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Department Name *</label>
-              <input className={inputCls} placeholder="e.g. Finance" value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Department Name *</label>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Finance" value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Number of Employees</label>
-              <input className={inputCls} placeholder="e.g. 20" type="number" min={0} value={deptForm.employees} onChange={(e) => setDeptForm({ ...deptForm, employees: e.target.value })} />
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Number of Employees</label>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. 20" type="number" min={0} value={deptForm.employees} onChange={(e) => setDeptForm({ ...deptForm, employees: e.target.value })} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Color Tag</label>
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-2")}>Color Tag</label>
               <div className="flex gap-2 flex-wrap">
                 {DEPT_COLORS.map((c) => (
                   <button
@@ -268,17 +270,17 @@ export default function ConfigPage() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Document Name *</label>
-              <input className={inputCls} placeholder="e.g. Residency Permit" value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} />
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Document Name *</label>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Residency Permit" value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Category</label>
-                <input className={inputCls} placeholder="e.g. Legal" value={docForm.category} onChange={(e) => setDocForm({ ...docForm, category: e.target.value })} />
+                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Category</label>
+                <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Legal" value={docForm.category} onChange={(e) => setDocForm({ ...docForm, category: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Requirement</label>
-                <select className={inputCls} value={docForm.requirement} onChange={(e) => setDocForm({ ...docForm, requirement: e.target.value })}>
+                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Requirement</label>
+                <select className={cn(typography.body.md, inputCls)} value={docForm.requirement} onChange={(e) => setDocForm({ ...docForm, requirement: e.target.value })}>
                   <option>Required</option>
                   <option>Mandatory</option>
                   <option>Standard</option>
@@ -288,12 +290,12 @@ export default function ConfigPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Icon (Material Symbol name)</label>
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Icon (Material Symbol name)</label>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
                   <span className="material-symbols-outlined">{docForm.icon || "description"}</span>
                 </div>
-                <input className={inputCls} placeholder="e.g. badge, contract, description" value={docForm.icon} onChange={(e) => setDocForm({ ...docForm, icon: e.target.value })} />
+                <input className={cn(typography.body.md, inputCls)} placeholder="e.g. badge, contract, description" value={docForm.icon} onChange={(e) => setDocForm({ ...docForm, icon: e.target.value })} />
               </div>
             </div>
           </div>
@@ -308,8 +310,8 @@ export default function ConfigPage() {
 
 
         <div className="relative z-10">
-          <h2 className="font-headline-lg text-headline-lg text-on-background">Platform Entities</h2>
-          <p className="text-on-surface-variant max-w-xl text-sm sm:text-body-lg">
+          <h2 className={cn(typography.heading.h1, "text-on-background")}>Platform Entities</h2>
+          <p className={cn(typography.body.lg, "text-on-surface-variant max-w-xl mt-1")}>
             Organize the core structural data of your organization. Changes here reflect across all modules.
           </p>
         </div>
@@ -326,8 +328,8 @@ export default function ConfigPage() {
                 <span className="material-symbols-outlined text-[20px] sm:text-[28px]">{s.icon}</span>
               </div>
               <div>
-                <p className="text-[10px] sm:text-label-sm text-on-surface-variant uppercase tracking-wider">{s.label}</p>
-                <p className="font-bold text-xl sm:text-headline-md text-on-surface">{s.value}</p>
+                <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>{s.label}</p>
+                <p className={cn(typography.number.hero, "text-on-surface")}>{s.value}</p>
               </div>
             </div>
           ))}
@@ -342,8 +344,8 @@ export default function ConfigPage() {
                   <span className="material-symbols-outlined">domain</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-on-surface text-base">Branches</h3>
-                  <p className="text-[10px] text-on-surface-variant">{branches.length} locations</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Branches</h3>
+                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{branches.length} locations</p>
                 </div>
               </div>
               <button onClick={openAddBranch} className="p-2 bg-primary text-white rounded-full shadow-lg shadow-primary/25 hover:opacity-90 active:scale-90 transition-all">
@@ -352,10 +354,10 @@ export default function ConfigPage() {
             </div>
             <div className="mb-4 relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-              <input className="w-full bg-surface-container/50 border border-outline-variant/30 rounded-full py-2 pl-9 pr-4 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Search branches..." value={branchSearch} onChange={(e) => setBranchSearch(e.target.value)} />
+              <input className={cn(typography.body.md, "w-full bg-surface-container/50 border border-outline-variant/30 rounded-full py-2 pl-9 pr-4 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all")} placeholder="Search branches..." value={branchSearch} onChange={(e) => setBranchSearch(e.target.value)} />
             </div>
             <div className="space-y-2.5 flex-grow overflow-y-auto max-h-[380px] hide-scrollbar">
-              {filteredBranches.length === 0 && <div className="py-8 text-center text-on-surface-variant text-sm">No branches found.</div>}
+              {filteredBranches.length === 0 && <div className={cn(typography.body.md, "py-8 text-center text-on-surface-variant")}>No branches found.</div>}
               {filteredBranches.map((branch) => (
                 <div key={branch.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
                   <div className="flex items-center gap-3">
@@ -363,8 +365,8 @@ export default function ConfigPage() {
                       <span className="material-symbols-outlined text-[16px]">location_on</span>
                     </div>
                     <div>
-                      <p className="font-bold text-on-surface text-sm">{branch.name}</p>
-                      <p className="text-[11px] text-on-surface-variant">{branch.subtitle}</p>
+                      <p className={cn(typography.heading.h4, "text-on-surface")}>{branch.name}</p>
+                      <p className={cn(typography.caption.md, "text-on-surface-variant")}>{branch.subtitle}</p>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -387,8 +389,8 @@ export default function ConfigPage() {
                   <span className="material-symbols-outlined">account_tree</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-on-surface text-base">Departments</h3>
-                  <p className="text-[10px] text-on-surface-variant">{departments.length} teams</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Departments</h3>
+                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{departments.length} teams</p>
                 </div>
               </div>
               <button onClick={openAddDept} className="p-2 bg-secondary text-white rounded-full shadow-lg shadow-secondary/25 hover:opacity-90 active:scale-90 transition-all">
@@ -397,17 +399,17 @@ export default function ConfigPage() {
             </div>
             <div className="mb-4 relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-              <input className="w-full bg-surface-container/50 border border-outline-variant/30 rounded-full py-2 pl-9 pr-4 text-sm focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none transition-all" placeholder="Search departments..." value={deptSearch} onChange={(e) => setDeptSearch(e.target.value)} />
+              <input className={cn(typography.body.md, "w-full bg-surface-container/50 border border-outline-variant/30 rounded-full py-2 pl-9 pr-4 focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none transition-all")} placeholder="Search departments..." value={deptSearch} onChange={(e) => setDeptSearch(e.target.value)} />
             </div>
             <div className="space-y-2.5 flex-grow overflow-y-auto max-h-[380px] hide-scrollbar">
-              {filteredDepts.length === 0 && <div className="py-8 text-center text-on-surface-variant text-sm">No departments found.</div>}
+              {filteredDepts.length === 0 && <div className={cn(typography.body.md, "py-8 text-center text-on-surface-variant")}>No departments found.</div>}
               {filteredDepts.map((dept) => (
                 <div key={dept.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-9 rounded-full shrink-0" style={{ backgroundColor: dept.color }} />
                     <div>
-                      <p className="font-bold text-on-surface text-sm">{dept.name}</p>
-                      <p className="text-[11px] text-on-surface-variant">{dept.employees} Employees</p>
+                      <p className={cn(typography.heading.h4, "text-on-surface")}>{dept.name}</p>
+                      <p className={cn(typography.caption.md, "text-on-surface-variant")}>{dept.employees} Employees</p>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -430,8 +432,8 @@ export default function ConfigPage() {
                   <span className="material-symbols-outlined">description</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-on-surface text-base">Document Types</h3>
-                  <p className="text-[10px] text-on-surface-variant">{docs.length} types</p>
+                  <h3 className={cn(typography.heading.h3, "text-on-surface")}>Document Types</h3>
+                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{docs.length} types</p>
                 </div>
               </div>
               <button onClick={openAddDoc} className="p-2 bg-tertiary text-white rounded-full shadow-lg shadow-tertiary/25 hover:opacity-90 active:scale-90 transition-all">
@@ -440,10 +442,10 @@ export default function ConfigPage() {
             </div>
             <div className="mb-4 relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-              <input className="w-full bg-surface-container/50 border border-outline-variant/30 rounded-full py-2 pl-9 pr-4 text-sm focus:border-tertiary focus:ring-1 focus:ring-tertiary/30 outline-none transition-all" placeholder="Search doc types..." value={docSearch} onChange={(e) => setDocSearch(e.target.value)} />
+              <input className={cn(typography.body.md, "w-full bg-surface-container/50 border border-outline-variant/30 rounded-full py-2 pl-9 pr-4 focus:border-tertiary focus:ring-1 focus:ring-tertiary/30 outline-none transition-all")} placeholder="Search doc types..." value={docSearch} onChange={(e) => setDocSearch(e.target.value)} />
             </div>
             <div className="space-y-2.5 flex-grow overflow-y-auto max-h-[380px] hide-scrollbar">
-              {filteredDocs.length === 0 && <div className="py-8 text-center text-on-surface-variant text-sm">No document types found.</div>}
+              {filteredDocs.length === 0 && <div className={cn(typography.body.md, "py-8 text-center text-on-surface-variant")}>No document types found.</div>}
               {filteredDocs.map((doc) => (
                 <div key={doc.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
                   <div className="flex items-center gap-3">
@@ -451,8 +453,8 @@ export default function ConfigPage() {
                       <span className="material-symbols-outlined text-[16px]">{doc.icon}</span>
                     </div>
                     <div>
-                      <p className="font-bold text-on-surface text-sm">{doc.name}</p>
-                      <p className="text-[11px] text-on-surface-variant">{doc.category} - {doc.requirement}</p>
+                      <p className={cn(typography.heading.h4, "text-on-surface")}>{doc.name}</p>
+                      <p className={cn(typography.caption.md, "text-on-surface-variant")}>{doc.category} - {doc.requirement}</p>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
