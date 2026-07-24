@@ -35,13 +35,16 @@ export default function MobileLoginPage() {
       <div className="floating-orb w-[250px] h-[250px] bg-tertiary-container/20 -bottom-10 -right-10" style={{ animationDelay: "-5s" }}></div>
 
       <main className="relative z-10 w-full max-w-sm py-6">
-        {/* Header Branding */}
+        {/* Header Branding with Logo Image */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 mb-4">
-            <span className="material-symbols-outlined text-white text-3xl">corporate_fare</span>
+          <div className="w-20 h-20 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-lg flex items-center justify-center p-2 mb-3 overflow-hidden">
+            <img
+              src="/screen.png"
+              alt="HR Portal Logo"
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
-          <h1 className={cn(typography.heading.h1, "text-primary tracking-tighter text-2xl font-extrabold")}>HR Portal</h1>
-          <p className={cn(typography.body.md, "text-on-surface-variant mt-1 font-medium")}>Simplify your workspace</p>
+
         </div>
 
         {/* Login Card */}
@@ -121,7 +124,7 @@ export default function MobileLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary-container text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/20 transform transition-all active:scale-95 disabled:opacity-50 mt-2"
+              className="w-full bg-primary hover:bg-primary-container text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/20 transform transition-all active:scale-95 disabled:opacity-50 mt-2 cursor-pointer"
             >
               {loading ? "Verifying Credentials..." : "Sign In"}
             </button>
