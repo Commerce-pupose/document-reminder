@@ -1,10 +1,75 @@
 "use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
+import UploadDocumentModal from "@/components/UploadDocumentModal";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
+import { useDocuments, useEmployees, useConfig, getSmartDocumentIcon } from "@/backend/useHooks";
+import { formatDisplayDate } from "@/lib/dateUtils";
 
 export default function MobileDocumentsPage() {
+  const { documents, isLive, deleteDocument } = useDocuments();
+  const { employees } = useEmployees();
+  const { documentTypes } = useConfig();
+
+  const [search, setSearch] = useState("");
+  const [selectedType, setSelectedType] = useState("All");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const getEmployeeName = (empId: string) => {
+    const found = employees.find((e) => e.id === empId);
+    return found ? found.full_name : "Team Member";
+  };
+
+  const getDocIcon = (docTypeName: string) => {
+    const found = documentTypes.find((dt) => dt.name.toLowerCase() === (docTypeName || "").toLowerCase());
+    if (found && found.icon) {
+      return found.icon;
+    }
+    return getSmartDocumentIcon(docTypeName);
+  };
+
+  const filteredDocuments = documents.filter((doc) => {
+    const empName = getEmployeeName(doc.employee_id).toLowerCase();
+    const docName = (doc.document_type_name || "").toLowerCase();
+    const docNum = (doc.document_number || "").toLowerCase();
+    const q = search.toLowerCase();
+
+    const matchesSearch = empName.includes(q) || docName.includes(q) || docNum.includes(q);
+    const matchesType = selectedType === "All" || docName.includes(selectedType.toLowerCase());
+
+    return matchesSearch && matchesType;
+  });
+
+  const getStatusBadge = (status: string) => {
+    if (status === "expired") {
+      return (
+        <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold")}>
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          Expired
+        </span>
+      );
+    }
+    if (status === "expiring_soon") {
+      return (
+        <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-700 font-bold")}>
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+          Expiring Soon
+        </span>
+      );
+    }
+    return (
+      <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 font-bold")}>
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+        Active
+      </span>
+    );
+  };
+
+  const categoryChips = ["All", ...documentTypes.map((dt) => dt.name)];
+
   return (
     <div className="bg-background text-on-surface min-h-screen relative z-[100] pb-32">
       {/* Background layer covering desktop sidebar */}
@@ -27,160 +92,113 @@ export default function MobileDocumentsPage() {
               <span className={cn(typography.body.md, "font-bold text-primary")}>Back</span>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 transition-all active:scale-90">
-              <span className="material-symbols-outlined text-on-surface-variant">search</span>
-            </button>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/40 border border-white/60 shadow-sm">
+              <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+              <span className={cn(typography.caption.sm, "text-on-surface font-medium")}>
+                {isLive ? "Live" : "Local"}
+              </span>
+            </div>
             <Link href="/calendar" className="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 transition-all active:scale-90 text-primary">
               <span className="material-symbols-outlined">calendar_month</span>
             </Link>
-            <button className="relative w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 transition-all active:scale-90">
-              <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
-            </button>
           </div>
         </header>
 
         <main className="px-container-margin py-6 pb-safe">
-          {/* Page Title */}
-          <header className="mb-section-spacing">
+          {/* Page Title & Search */}
+          <header className="mb-4">
             <h1 className={cn(typography.heading.h1, "text-on-surface tracking-tight")}>Document Library</h1>
             <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>Manage and track employee compliance files.</p>
           </header>
 
+          <div className="relative mb-6">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+            <input
+              className={cn(typography.body.md, "w-full h-12 pl-12 pr-4 bg-white/40 backdrop-blur-xl border border-white/60 rounded-full focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant outline-none shadow-sm")}
+              placeholder="Search documents or employees..."
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
           {/* Category Chips */}
           <section className="mb-section-spacing -mx-container-margin overflow-x-auto hide-scrollbar flex items-center gap-3 px-container-margin">
-            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full bg-primary text-on-primary shadow-md shadow-primary/20 transition-all active:scale-95 whitespace-nowrap")}>All</button>
-            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full glass-panel text-on-surface-variant hover:bg-white/80 transition-all active:scale-95 whitespace-nowrap")}>Visa</button>
-            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full glass-panel text-on-surface-variant hover:bg-white/80 transition-all active:scale-95 whitespace-nowrap")}>Passport</button>
-            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full glass-panel text-on-surface-variant hover:bg-white/80 transition-all active:scale-95 whitespace-nowrap")}>Insurance</button>
-            <button className={cn(typography.button.sm, "px-6 py-2.5 rounded-full glass-panel text-on-surface-variant hover:bg-white/80 transition-all active:scale-95 whitespace-nowrap")}>ID Cards</button>
+            {categoryChips.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedType(cat)}
+                className={cn(
+                  typography.button.sm,
+                  "px-6 py-2.5 rounded-full whitespace-nowrap active:scale-95 transition-transform",
+                  selectedType === cat
+                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    : "glass-panel text-on-surface-variant hover:bg-white/80"
+                )}
+              >
+                {cat}
+              </button>
+            ))}
           </section>
 
           {/* Document List */}
           <div className="flex flex-col gap-stack-gap">
-            {/* Document Card 1 */}
-            <div className="glass-panel-heavy p-card-padding rounded-lg shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700")}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    Active
-                  </span>
-                  <span className={cn(typography.caption.sm, "text-on-surface-variant mt-1")}>Ref: #DOC-8921</span>
-                </div>
+            {filteredDocuments.length === 0 ? (
+              <div className="glass-panel-heavy p-8 rounded-lg text-center text-on-surface-variant">
+                No documents found.
               </div>
-              <div className="mb-4">
-                <h3 className={cn(typography.heading.h3, "text-on-surface")}>Alex Thompson</h3>
-                <p className={cn(typography.body.md, "text-on-surface-variant")}>Employee ID: EMP-2024-042</p>
-              </div>
-              <div className="pt-4 border-t border-white/20 flex justify-between items-center">
-                <div>
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Document Type</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Work Visa (H1-B)</p>
+            ) : (
+              filteredDocuments.map((doc) => (
+                <div key={doc.id} className="glass-panel-heavy p-card-padding rounded-lg shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container">
+                      <span className="material-symbols-outlined">{getDocIcon(doc.document_type_name)}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      {getStatusBadge(doc.status)}
+                      <button
+                        onClick={() => deleteDocument(doc.id)}
+                        className="p-1 text-on-surface-variant hover:text-error transition-colors mt-1"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <h3 className={cn(typography.heading.h3, "text-on-surface")}>{getEmployeeName(doc.employee_id)}</h3>
+                    <p className={cn(typography.body.md, "text-on-surface-variant")}>No: {doc.document_number || "N/A"}</p>
+                  </div>
+                  <div className="pt-4 border-t border-white/20 flex justify-between items-center">
+                    <div>
+                      <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Document Type</p>
+                      <p className={cn(typography.body.md, "font-bold text-on-surface")}>{doc.document_type_name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Expiry Date</p>
+                      <p className={cn(typography.body.md, "font-bold text-on-surface")}>{formatDisplayDate(doc.expiry_date)}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Expiry Date</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Nov 12, 2026</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Document Card 2 */}
-            <div className="glass-panel-heavy p-card-padding rounded-lg shadow-sm active:scale-[0.98] duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>badge</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-700")}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                    Expiring Soon
-                  </span>
-                  <span className={cn(typography.caption.sm, "text-on-surface-variant mt-1")}>Ref: #DOC-4412</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h3 className={cn(typography.heading.h3, "text-on-surface")}>Sarah Jenkins</h3>
-                <p className={cn(typography.body.md, "text-on-surface-variant")}>Employee ID: EMP-2023-118</p>
-              </div>
-              <div className="pt-4 border-t border-white/20 flex justify-between items-center">
-                <div>
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Document Type</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Passport (International)</p>
-                </div>
-                <div className="text-right">
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Expiry Date</p>
-                  <p className={cn(typography.body.md, "font-bold text-error")}>Mar 05, 2024</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Document Card 3 */}
-            <div className="glass-panel-heavy p-card-padding rounded-lg shadow-sm active:scale-[0.98] duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700")}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    Active
-                  </span>
-                  <span className={cn(typography.caption.sm, "text-on-surface-variant mt-1")}>Ref: #DOC-1029</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h3 className={cn(typography.heading.h3, "text-on-surface")}>Marcus Chen</h3>
-                <p className={cn(typography.body.md, "text-on-surface-variant")}>Employee ID: EMP-2024-009</p>
-              </div>
-              <div className="pt-4 border-t border-white/20 flex justify-between items-center">
-                <div>
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Document Type</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Health Insurance Card</p>
-                </div>
-                <div className="text-right">
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Expiry Date</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Jan 01, 2025</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Document Card 4 */}
-            <div className="glass-panel-heavy p-card-padding rounded-lg shadow-sm active:scale-[0.98] duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-xl bg-outline-variant/30 flex items-center justify-center text-on-surface-variant">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>credit_card</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className={cn(typography.label.sm, "flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant")}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-outline"></span>
-                    Archived
-                  </span>
-                  <span className={cn(typography.caption.sm, "text-on-surface-variant mt-1")}>Ref: #DOC-0051</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h3 className={cn(typography.heading.h3, "text-on-surface")}>Elena Rodriguez</h3>
-                <p className={cn(typography.body.md, "text-on-surface-variant")}>Employee ID: EMP-2022-552</p>
-              </div>
-              <div className="pt-4 border-t border-white/20 flex justify-between items-center">
-                <div>
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Document Type</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Government ID</p>
-                </div>
-                <div className="text-right">
-                  <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>Expiry Date</p>
-                  <p className={cn(typography.body.md, "font-bold text-on-surface")}>Dec 31, 2023</p>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </main>
-        
+
+        {/* FAB for upload */}
+        <button
+          onClick={() => setIsUploadModalOpen(true)}
+          className="fixed bottom-32 right-6 w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-primary-container text-white flex items-center justify-center fab-glow active:scale-90 transition-transform z-[110] animate-float"
+        >
+          <span className="material-symbols-outlined text-[28px]">add</span>
+        </button>
+
+        <UploadDocumentModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+        />
+
         <MobileBottomNavBar />
       </div>
     </div>

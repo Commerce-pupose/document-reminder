@@ -1,87 +1,45 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-
-// Types
-interface Branch {
-  id: number;
-  name: string;
-  subtitle: string;
-}
-
-interface Department {
-  id: number;
-  name: string;
-  employees: number;
-  color: string;
-}
-
-interface DocumentType {
-  id: number;
-  name: string;
-  category: string;
-  requirement: string;
-  icon: string;
-}
-
-// Initial Data
-const INITIAL_BRANCHES: Branch[] = [
-  { id: 1, name: "HQ - Dubai", subtitle: "Primary Hub - UAE" },
-  { id: 2, name: "Abu Dhabi Office", subtitle: "Regional HQ - UAE" },
-  { id: 3, name: "Sharjah Branch", subtitle: "Operational Center - UAE" },
-];
+import { useConfig, getSmartDocumentIcon } from "@/backend/useHooks";
+import { Branch, Department, DocumentType } from "@/backend/data-types/models";
 
 const DEPT_COLORS = ["#4648d4", "#7f458d", "#4b5a9c", "#ba1a1a", "#2e7d32", "#f57c00"];
-
-const INITIAL_DEPARTMENTS: Department[] = [
-  { id: 1, name: "Engineering", employees: 42, color: DEPT_COLORS[0] },
-  { id: 2, name: "Design", employees: 12, color: DEPT_COLORS[1] },
-  { id: 3, name: "Human Resources", employees: 8, color: DEPT_COLORS[2] },
-  { id: 4, name: "Marketing", employees: 15, color: DEPT_COLORS[3] },
-];
-
-const INITIAL_DOCS: DocumentType[] = [
-  { id: 1, name: "Passport", category: "Identity", requirement: "Required", icon: "verified_user" },
-  { id: 2, name: "Work Visa", category: "Legal", requirement: "Mandatory", icon: "work" },
-  { id: 3, name: "Insurance Card", category: "Health", requirement: "Standard", icon: "medical_information" },
-  { id: 4, name: "Emirates ID", category: "Identity", requirement: "Required", icon: "badge" },
-  { id: 5, name: "Labour Card", category: "Legal", requirement: "Mandatory", icon: "contract" },
-];
 
 const inputCls =
   "w-full bg-surface-container/50 border border-outline-variant/40 rounded-xl px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all";
 
-// Modal Component
-interface ModalProps {
+function Modal({
+  title,
+  onClose,
+  onSave,
+  children,
+  accentColor = "#4648d4",
+}: {
   title: string;
   onClose: () => void;
   onSave: () => void;
   children: React.ReactNode;
   accentColor?: string;
-}
-
-function Modal({ title, onClose, onSave, children, accentColor = "#4648d4" }: ModalProps) {
+}) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-on-surface/20 backdrop-blur-sm" />
-      <div
-        className="relative glass-modal rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative glass-modal rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className={cn(typography.heading.h2, "text-on-surface")}>{title}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
-            <span className="material-symbols-outlined text-[20px]">close</span>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-surface-container text-on-surface-variant">
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
         {children}
         <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container transition-colors")}>
+          <button onClick={onClose} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant")}>
             Cancel
           </button>
-          <button onClick={onSave} style={{ backgroundColor: accentColor }} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl text-white hover:opacity-90 transition-opacity active:scale-[0.98] shadow-lg")}>
+          <button onClick={onSave} style={{ backgroundColor: accentColor }} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl text-white shadow-lg")}>
             Save
           </button>
         </div>
@@ -90,30 +48,28 @@ function Modal({ title, onClose, onSave, children, accentColor = "#4648d4" }: Mo
   );
 }
 
-// Delete Dialog
-interface DeleteDialogProps {
-  itemName: string;
+function ConfirmModal({
+  title,
+  message,
+  onClose,
+  onConfirm,
+}: {
+  title: string;
+  message: string;
   onClose: () => void;
   onConfirm: () => void;
-}
-
-function DeleteDialog({ itemName, onClose, onConfirm }: DeleteDialogProps) {
+}) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-on-surface/20 backdrop-blur-sm" />
       <div className="relative glass-modal rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center mx-auto">
-          <span className="material-symbols-outlined text-error">delete_forever</span>
-        </div>
-        <div className="text-center">
-          <h3 className={cn(typography.heading.h3, "text-on-surface")}>Delete &quot;{itemName}&quot;?</h3>
-          <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>This action cannot be undone.</p>
-        </div>
-        <div className="flex gap-3 pt-1">
-          <button onClick={onClose} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container transition-colors")}>
+        <h3 className={cn(typography.heading.h3, "text-on-surface")}>{title}</h3>
+        <p className={cn(typography.body.md, "text-on-surface-variant")}>{message}</p>
+        <div className="flex gap-3 pt-2">
+          <button onClick={onClose} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant")}>
             Cancel
           </button>
-          <button onClick={onConfirm} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl bg-error text-white hover:opacity-90 transition-opacity active:scale-[0.98]")}>
+          <button onClick={onConfirm} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl bg-error text-white shadow-lg")}>
             Delete
           </button>
         </div>
@@ -122,87 +78,104 @@ function DeleteDialog({ itemName, onClose, onConfirm }: DeleteDialogProps) {
   );
 }
 
-// Main Page
 export default function ConfigPage() {
-  const [branches, setBranches] = useState<Branch[]>(INITIAL_BRANCHES);
+  const {
+    branches,
+    departments,
+    documentTypes,
+    isLive,
+    addBranch,
+    updateBranch,
+    deleteBranch,
+    addDepartment,
+    updateDepartment,
+    deleteDepartment,
+    addDocumentType,
+    updateDocumentType,
+    deleteDocumentType,
+  } = useConfig();
+
+  // Search filter states
   const [branchSearch, setBranchSearch] = useState("");
+  const [deptSearch, setDeptSearch] = useState("");
+  const [docSearch, setDocSearch] = useState("");
+
+  // Branch Modal State
   const [branchModal, setBranchModal] = useState<{ mode: "add" | "edit"; item?: Branch } | null>(null);
   const [branchForm, setBranchForm] = useState({ name: "", subtitle: "" });
-  const [deleteBranch, setDeleteBranch] = useState<Branch | null>(null);
+  const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
 
-  const [departments, setDepartments] = useState<Department[]>(INITIAL_DEPARTMENTS);
-  const [deptSearch, setDeptSearch] = useState("");
+  // Department Modal State
   const [deptModal, setDeptModal] = useState<{ mode: "add" | "edit"; item?: Department } | null>(null);
-  const [deptForm, setDeptForm] = useState({ name: "", employees: "", color: DEPT_COLORS[0] });
-  const [deleteDept, setDeleteDept] = useState<Department | null>(null);
+  const [deptForm, setDeptForm] = useState({ name: "", employees_count: 0, color: DEPT_COLORS[0] });
+  const [deletingDept, setDeletingDept] = useState<Department | null>(null);
 
-  const [docs, setDocs] = useState<DocumentType[]>(INITIAL_DOCS);
-  const [docSearch, setDocSearch] = useState("");
+  // Document Type Modal State
   const [docModal, setDocModal] = useState<{ mode: "add" | "edit"; item?: DocumentType } | null>(null);
   const [docForm, setDocForm] = useState({ name: "", category: "", requirement: "Required", icon: "description" });
-  const [deleteDoc, setDeleteDoc] = useState<DocumentType | null>(null);
-
-  const nextId = useRef(100);
-  const uid = () => nextId.current++;
+  const [deletingDoc, setDeletingDoc] = useState<DocumentType | null>(null);
 
   // Branch handlers
   const openAddBranch = () => { setBranchForm({ name: "", subtitle: "" }); setBranchModal({ mode: "add" }); };
-  const openEditBranch = (b: Branch) => { setBranchForm({ name: b.name, subtitle: b.subtitle }); setBranchModal({ mode: "edit", item: b }); };
-  const saveBranch = () => {
+  const openEditBranch = (b: Branch) => { setBranchForm({ name: b.name, subtitle: b.subtitle || "" }); setBranchModal({ mode: "edit", item: b }); };
+  const saveBranch = async () => {
     if (!branchForm.name.trim()) return;
     if (branchModal?.mode === "add") {
-      setBranches((prev) => [...prev, { id: uid(), name: branchForm.name, subtitle: branchForm.subtitle }]);
+      await addBranch(branchForm);
     } else if (branchModal?.item) {
-      setBranches((prev) => prev.map((b) => b.id === branchModal.item!.id ? { ...b, ...branchForm } : b));
+      await updateBranch(branchModal.item.id, branchForm);
     }
     setBranchModal(null);
   };
-  const confirmDeleteBranch = () => {
-    if (deleteBranch) setBranches((p) => p.filter((b) => b.id !== deleteBranch.id));
-    setDeleteBranch(null);
+  const confirmDeleteBranch = async () => {
+    if (deletingBranch) await deleteBranch(deletingBranch.id);
+    setDeletingBranch(null);
   };
 
   // Department handlers
-  const openAddDept = () => { setDeptForm({ name: "", employees: "", color: DEPT_COLORS[0] }); setDeptModal({ mode: "add" }); };
-  const openEditDept = (d: Department) => { setDeptForm({ name: d.name, employees: String(d.employees), color: d.color }); setDeptModal({ mode: "edit", item: d }); };
-  const saveDept = () => {
+  const openAddDept = () => { setDeptForm({ name: "", employees_count: 0, color: DEPT_COLORS[0] }); setDeptModal({ mode: "add" }); };
+  const openEditDept = (d: Department) => { setDeptForm({ name: d.name, employees_count: d.employees_count || 0, color: d.color || DEPT_COLORS[0] }); setDeptModal({ mode: "edit", item: d }); };
+  const saveDept = async () => {
     if (!deptForm.name.trim()) return;
     if (deptModal?.mode === "add") {
-      setDepartments((prev) => [...prev, { id: uid(), name: deptForm.name, employees: Number(deptForm.employees) || 0, color: deptForm.color }]);
+      await addDepartment(deptForm);
     } else if (deptModal?.item) {
-      setDepartments((prev) => prev.map((d) => d.id === deptModal.item!.id ? { ...d, name: deptForm.name, employees: Number(deptForm.employees) || 0, color: deptForm.color } : d));
+      await updateDepartment(deptModal.item.id, deptForm);
     }
     setDeptModal(null);
   };
-  const confirmDeleteDept = () => {
-    if (deleteDept) setDepartments((p) => p.filter((d) => d.id !== deleteDept.id));
-    setDeleteDept(null);
+  const confirmDeleteDept = async () => {
+    if (deletingDept) await deleteDepartment(deletingDept.id);
+    setDeletingDept(null);
   };
 
   // Document handlers
   const openAddDoc = () => { setDocForm({ name: "", category: "", requirement: "Required", icon: "description" }); setDocModal({ mode: "add" }); };
   const openEditDoc = (d: DocumentType) => { setDocForm({ name: d.name, category: d.category, requirement: d.requirement, icon: d.icon }); setDocModal({ mode: "edit", item: d }); };
-  const saveDoc = () => {
+  const saveDoc = async () => {
     if (!docForm.name.trim()) return;
+    const smartIcon = docForm.icon && docForm.icon !== "description" ? docForm.icon : getSmartDocumentIcon(docForm.name, docForm.category);
+    const payload = { ...docForm, icon: smartIcon };
+
     if (docModal?.mode === "add") {
-      setDocs((prev) => [...prev, { id: uid(), ...docForm }]);
+      await addDocumentType(payload);
     } else if (docModal?.item) {
-      setDocs((prev) => prev.map((d) => d.id === docModal.item!.id ? { ...d, ...docForm } : d));
+      await updateDocumentType(docModal.item.id, payload);
     }
     setDocModal(null);
   };
-  const confirmDeleteDoc = () => {
-    if (deleteDoc) setDocs((p) => p.filter((d) => d.id !== deleteDoc.id));
-    setDeleteDoc(null);
+  const confirmDeleteDoc = async () => {
+    if (deletingDoc) await deleteDocumentType(deletingDoc.id);
+    setDeletingDoc(null);
   };
 
   const filteredBranches = branches.filter((b) =>
-    (b.name + " " + b.subtitle).toLowerCase().includes(branchSearch.toLowerCase())
+    (b.name + " " + (b.subtitle || "")).toLowerCase().includes(branchSearch.toLowerCase())
   );
   const filteredDepts = departments.filter((d) =>
     d.name.toLowerCase().includes(deptSearch.toLowerCase())
   );
-  const filteredDocs = docs.filter((d) =>
+  const filteredDocs = documentTypes.filter((d) =>
     (d.name + " " + d.category + " " + d.requirement).toLowerCase().includes(docSearch.toLowerCase())
   );
 
@@ -233,26 +206,27 @@ export default function ConfigPage() {
           title={deptModal.mode === "add" ? "Add Department" : "Edit Department"}
           onClose={() => setDeptModal(null)}
           onSave={saveDept}
-          accentColor="#4b5a9c"
+          accentColor="#7f458d"
         >
           <div className="space-y-4">
             <div>
               <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Department Name *</label>
-              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Finance" value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Legal & Compliance" value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
             </div>
             <div>
-              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Number of Employees</label>
-              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. 20" type="number" min={0} value={deptForm.employees} onChange={(e) => setDeptForm({ ...deptForm, employees: e.target.value })} />
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Initial Member Count</label>
+              <input className={cn(typography.body.md, inputCls)} type="number" min="0" value={deptForm.employees_count} onChange={(e) => setDeptForm({ ...deptForm, employees_count: parseInt(e.target.value) || 0 })} />
             </div>
             <div>
-              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-2")}>Color Tag</label>
-              <div className="flex gap-2 flex-wrap">
-                {DEPT_COLORS.map((c) => (
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Accent Color</label>
+              <div className="flex gap-3 pt-1">
+                {DEPT_COLORS.map((color) => (
                   <button
-                    key={c}
-                    style={{ backgroundColor: c }}
-                    onClick={() => setDeptForm({ ...deptForm, color: c })}
-                    className={`w-8 h-8 rounded-full transition-all ${deptForm.color === c ? "scale-110 ring-2 ring-offset-2 ring-on-surface/30" : "hover:scale-105"}`}
+                    key={color}
+                    type="button"
+                    onClick={() => setDeptForm({ ...deptForm, color })}
+                    style={{ backgroundColor: color }}
+                    className={cn("w-8 h-8 rounded-full border-2 transition-all", deptForm.color === color ? "border-on-surface scale-110 shadow-md" : "border-transparent opacity-70 hover:opacity-100")}
                   />
                 ))}
               </div>
@@ -266,82 +240,68 @@ export default function ConfigPage() {
           title={docModal.mode === "add" ? "Add Document Type" : "Edit Document Type"}
           onClose={() => setDocModal(null)}
           onSave={saveDoc}
-          accentColor="#7f458d"
+          accentColor="#4b5a9c"
         >
           <div className="space-y-4">
             <div>
               <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Document Name *</label>
-              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Residency Permit" value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Category</label>
-                <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Legal" value={docForm.category} onChange={(e) => setDocForm({ ...docForm, category: e.target.value })} />
-              </div>
-              <div>
-                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Requirement</label>
-                <select className={cn(typography.body.md, inputCls)} value={docForm.requirement} onChange={(e) => setDocForm({ ...docForm, requirement: e.target.value })}>
-                  <option>Required</option>
-                  <option>Mandatory</option>
-                  <option>Standard</option>
-                  <option>Optional</option>
-                  <option>Confidential</option>
-                </select>
-              </div>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Work Visa" value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} />
             </div>
             <div>
-              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Icon (Material Symbol name)</label>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
-                  <span className="material-symbols-outlined">{docForm.icon || "description"}</span>
-                </div>
-                <input className={cn(typography.body.md, inputCls)} placeholder="e.g. badge, contract, description" value={docForm.icon} onChange={(e) => setDocForm({ ...docForm, icon: e.target.value })} />
-              </div>
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Category</label>
+              <input className={cn(typography.body.md, inputCls)} placeholder="e.g. Legal, Medical, Identity" value={docForm.category} onChange={(e) => setDocForm({ ...docForm, category: e.target.value })} />
+            </div>
+            <div>
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>Requirement Status</label>
+              <select className={cn(typography.body.md, inputCls)} value={docForm.requirement} onChange={(e) => setDocForm({ ...docForm, requirement: e.target.value })}>
+                <option value="Required">Required</option>
+                <option value="Mandatory">Mandatory</option>
+                <option value="Standard">Standard</option>
+                <option value="Optional">Optional</option>
+              </select>
             </div>
           </div>
         </Modal>
       )}
 
-      {deleteBranch && <DeleteDialog itemName={deleteBranch.name} onClose={() => setDeleteBranch(null)} onConfirm={confirmDeleteBranch} />}
-      {deleteDept && <DeleteDialog itemName={deleteDept.name} onClose={() => setDeleteDept(null)} onConfirm={confirmDeleteDept} />}
-      {deleteDoc && <DeleteDialog itemName={deleteDoc.name} onClose={() => setDeleteDoc(null)} onConfirm={confirmDeleteDoc} />}
+      {deletingBranch && <ConfirmModal title="Delete Branch?" message={`Delete "${deletingBranch.name}"?`} onClose={() => setDeletingBranch(null)} onConfirm={confirmDeleteBranch} />}
+      {deletingDept && <ConfirmModal title="Delete Department?" message={`Delete "${deletingDept.name}"?`} onClose={() => setDeletingDept(null)} onConfirm={confirmDeleteDept} />}
+      {deletingDoc && <ConfirmModal title="Delete Document Type?" message={`Delete "${deletingDoc.name}"?`} onClose={() => setDeletingDoc(null)} onConfirm={confirmDeleteDoc} />}
 
-      <div className="px-6 md:px-10 py-8 max-w-[1400px] mx-auto w-full space-y-8">
+      {/* Aura background glow */}
+      <div className="aura-glow">
+        <div className="aura-circle bg-primary-container w-[500px] h-[500px] top-[-100px] left-[-100px]"></div>
+        <div className="aura-circle bg-tertiary-container w-[400px] h-[400px] bottom-[10%] right-[-10%]"></div>
+        <div className="aura-circle bg-secondary-container w-[300px] h-[300px] top-[40%] left-[20%]"></div>
+      </div>
 
-
-        <div className="relative z-10">
-          <h2 className={cn(typography.heading.h1, "text-on-background")}>Platform Entities</h2>
-          <p className={cn(typography.body.lg, "text-on-surface-variant max-w-xl mt-1")}>
-            Organize the core structural data of your organization. Changes here reflect across all modules.
-          </p>
-        </div>
-
-
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: "Branches", value: branches.length, icon: "domain", color: "text-primary", bg: "bg-primary/10" },
-            { label: "Departments", value: departments.length, icon: "account_tree", color: "text-secondary", bg: "bg-secondary/10" },
-            { label: "Doc Types", value: docs.length, icon: "description", color: "text-tertiary", bg: "bg-tertiary/10" },
-          ].map((s) => (
-            <div key={s.label} className="glass-card rounded-2xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${s.bg} flex items-center justify-center ${s.color} shrink-0`}>
-                <span className="material-symbols-outlined text-[20px] sm:text-[28px]">{s.icon}</span>
-              </div>
-              <div>
-                <p className={cn(typography.label.md, "text-on-surface-variant uppercase tracking-wider")}>{s.label}</p>
-                <p className={cn(typography.number.hero, "text-on-surface")}>{s.value}</p>
+      <div className="p-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
+        {/* Page Header */}
+        <div className="flex justify-between items-end">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className={cn(typography.heading.h1, "text-on-background")}>System Configuration</h2>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/40 border border-white/60 shadow-sm">
+                <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                <span className={cn(typography.caption.sm, "text-on-surface font-medium")}>
+                  {isLive ? "Supabase Live DB" : "Local State"}
+                </span>
               </div>
             </div>
-          ))}
+            <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>
+              Manage organizational branches, department definitions, and required document type templates.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
+        {/* 3 Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Branches Section */}
           <section className="glass-card rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined">domain</span>
+                  <span className="material-symbols-outlined">location_city</span>
                 </div>
                 <div>
                   <h3 className={cn(typography.heading.h3, "text-on-surface")}>Branches</h3>
@@ -358,22 +318,17 @@ export default function ConfigPage() {
             </div>
             <div className="space-y-2.5 flex-grow overflow-y-auto max-h-[380px] hide-scrollbar">
               {filteredBranches.length === 0 && <div className={cn(typography.body.md, "py-8 text-center text-on-surface-variant")}>No branches found.</div>}
-              {filteredBranches.map((branch) => (
-                <div key={branch.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                      <span className="material-symbols-outlined text-[16px]">location_on</span>
-                    </div>
-                    <div>
-                      <p className={cn(typography.heading.h4, "text-on-surface")}>{branch.name}</p>
-                      <p className={cn(typography.caption.md, "text-on-surface-variant")}>{branch.subtitle}</p>
-                    </div>
+              {filteredBranches.map((b) => (
+                <div key={b.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
+                  <div>
+                    <p className={cn(typography.heading.h4, "text-on-surface")}>{b.name}</p>
+                    <p className={cn(typography.caption.md, "text-on-surface-variant")}>{b.subtitle || "Global Hub"}</p>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEditBranch(branch)} className="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-primary/10 transition-colors">
+                    <button onClick={() => openEditBranch(b)} className="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-primary/10 transition-colors">
                       <span className="material-symbols-outlined text-[18px]">edit</span>
                     </button>
-                    <button onClick={() => setDeleteBranch(branch)} className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error/10 transition-colors">
+                    <button onClick={() => setDeletingBranch(b)} className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error/10 transition-colors">
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                   </div>
@@ -382,15 +337,16 @@ export default function ConfigPage() {
             </div>
           </section>
 
+          {/* Departments Section */}
           <section className="glass-card rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
-                  <span className="material-symbols-outlined">account_tree</span>
+                  <span className="material-symbols-outlined">domain</span>
                 </div>
                 <div>
                   <h3 className={cn(typography.heading.h3, "text-on-surface")}>Departments</h3>
-                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{departments.length} teams</p>
+                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{departments.length} departments</p>
                 </div>
               </div>
               <button onClick={openAddDept} className="p-2 bg-secondary text-white rounded-full shadow-lg shadow-secondary/25 hover:opacity-90 active:scale-90 transition-all">
@@ -406,17 +362,17 @@ export default function ConfigPage() {
               {filteredDepts.map((dept) => (
                 <div key={dept.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-9 rounded-full shrink-0" style={{ backgroundColor: dept.color }} />
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: dept.color || "#4648d4" }} />
                     <div>
                       <p className={cn(typography.heading.h4, "text-on-surface")}>{dept.name}</p>
-                      <p className={cn(typography.caption.md, "text-on-surface-variant")}>{dept.employees} Employees</p>
+                      <p className={cn(typography.caption.md, "text-on-surface-variant")}>{dept.employees_count || 0} employees</p>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEditDept(dept)} className="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-primary/10 transition-colors">
                       <span className="material-symbols-outlined text-[18px]">edit</span>
                     </button>
-                    <button onClick={() => setDeleteDept(dept)} className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error/10 transition-colors">
+                    <button onClick={() => setDeletingDept(dept)} className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error/10 transition-colors">
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                   </div>
@@ -425,6 +381,7 @@ export default function ConfigPage() {
             </div>
           </section>
 
+          {/* Document Types Section */}
           <section className="glass-card rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
@@ -433,7 +390,7 @@ export default function ConfigPage() {
                 </div>
                 <div>
                   <h3 className={cn(typography.heading.h3, "text-on-surface")}>Document Types</h3>
-                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{docs.length} types</p>
+                  <p className={cn(typography.caption.sm, "text-on-surface-variant")}>{documentTypes.length} types</p>
                 </div>
               </div>
               <button onClick={openAddDoc} className="p-2 bg-tertiary text-white rounded-full shadow-lg shadow-tertiary/25 hover:opacity-90 active:scale-90 transition-all">
@@ -450,7 +407,9 @@ export default function ConfigPage() {
                 <div key={doc.id} className="p-4 bg-white/50 border border-outline-variant/20 rounded-xl flex items-center justify-between group hover:bg-white/80 hover:shadow-md transition-all">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
-                      <span className="material-symbols-outlined text-[16px]">{doc.icon}</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        {doc.icon && doc.icon !== "description" ? doc.icon : getSmartDocumentIcon(doc.name, doc.category)}
+                      </span>
                     </div>
                     <div>
                       <p className={cn(typography.heading.h4, "text-on-surface")}>{doc.name}</p>
@@ -461,7 +420,7 @@ export default function ConfigPage() {
                     <button onClick={() => openEditDoc(doc)} className="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-primary/10 transition-colors">
                       <span className="material-symbols-outlined text-[18px]">edit</span>
                     </button>
-                    <button onClick={() => setDeleteDoc(doc)} className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error/10 transition-colors">
+                    <button onClick={() => setDeletingDoc(doc)} className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error/10 transition-colors">
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                   </div>
@@ -470,7 +429,6 @@ export default function ConfigPage() {
             </div>
           </section>
         </div>
-
       </div>
     </>
   );

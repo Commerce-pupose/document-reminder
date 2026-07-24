@@ -1,9 +1,105 @@
+"use client";
+
+import { useState } from "react";
 import MobileCalendarTopAppBar from "../components/MobileCalendarTopAppBar";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
+import { useDocuments, useEmployees, useConfig, getSmartDocumentIcon } from "@/backend/useHooks";
+import { formatDisplayDate } from "@/lib/dateUtils";
 
 export default function MobileCalendarPage() {
+  const { documents, isLive } = useDocuments();
+  const { employees } = useEmployees();
+  const { documentTypes } = useConfig();
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
+
+  const getEmployee = (empId: string) => {
+    return employees.find((e) => e.id === empId);
+  };
+
+  const getDocIcon = (docTypeName: string) => {
+    const found = documentTypes.find((dt) => dt.name.toLowerCase() === (docTypeName || "").toLowerCase());
+    return (found && found.icon) || getSmartDocumentIcon(docTypeName);
+  };
+
+  // Calendar Grid Calculations
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+
+  const monthName = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+    setSelectedDayDate(null);
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+    setSelectedDayDate(null);
+  };
+
+  // Build grid days array
+  const gridCells = [];
+  // Prev month padding
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    gridCells.push({ dayNum: prevMonthDays - i, isCurrentMonth: false, dateStr: null });
+  }
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const monthStr = String(month + 1).padStart(2, '0');
+    const dayStr = String(d).padStart(2, '0');
+    const isoDateStr = `${year}-${monthStr}-${dayStr}`;
+    gridCells.push({ dayNum: d, isCurrentMonth: true, dateStr: isoDateStr });
+  }
+  // Next month padding to fill grid
+  const remainingSlots = (7 - (gridCells.length % 7)) % 7;
+  for (let i = 1; i <= remainingSlots; i++) {
+    gridCells.push({ dayNum: i, isCurrentMonth: false, dateStr: null });
+  }
+
+  // Get expiry status for a date string
+  const getDocsForDate = (dateStr: string | null) => {
+    if (!dateStr) return [];
+    return documents.filter((d) => {
+      if (!d.expiry_date) return false;
+      return d.expiry_date.startsWith(dateStr);
+    });
+  };
+
+  const todayIso = new Date().toISOString().split('T')[0];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const expiredDocs = documents.filter((d) => {
+    if (d.status === "expired") return true;
+    if (!d.expiry_date) return false;
+    const exp = new Date(d.expiry_date);
+    return exp < today;
+  });
+
+  const expiringThisWeekDocs = documents.filter((d) => {
+    if (!d.expiry_date) return false;
+    const exp = new Date(d.expiry_date);
+    exp.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7;
+  });
+
+  const upcomingDocs = documents.filter((d) => {
+    if (!d.expiry_date) return false;
+    const exp = new Date(d.expiry_date);
+    exp.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > 7;
+  });
+
   return (
     <div className="bg-background text-on-surface min-h-screen relative z-[100] pb-32">
       {/* Background layer covering desktop sidebar */}
@@ -13,20 +109,30 @@ export default function MobileCalendarPage() {
         <MobileCalendarTopAppBar />
 
         <main className="pt-24 px-4 max-w-md mx-auto">
-          {/* Date & Count Header */}
-          <div className="flex justify-between items-end mb-6">
+          {/* Header & Controls */}
+          <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className={cn(typography.heading.h2, "text-on-surface")}>May 12, 2026</h2>
+              <h2 className={cn(typography.heading.h2, "text-on-surface")}>{monthName}</h2>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                <span className={cn(typography.caption.sm, "text-on-surface-variant font-medium")}>
+                  {isLive ? "Supabase Live DB" : "Local State"}
+                </span>
+              </div>
             </div>
-            <div className="text-right">
-              <span className={cn(typography.caption.sm, "font-bold text-on-surface-variant block uppercase tracking-wider")}>12 upcoming</span>
-              <span className={cn(typography.caption.sm, "font-bold text-on-surface-variant")}>expiries</span>
+            <div className="flex items-center gap-1">
+              <button onClick={prevMonth} className="p-2 rounded-full hover:bg-white/40 text-on-surface-variant">
+                <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+              </button>
+              <button onClick={nextMonth} className="p-2 rounded-full hover:bg-white/40 text-on-surface-variant">
+                <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+              </button>
             </div>
           </div>
 
-          {/* Calendar Card */}
-          <section className="bg-white/60 backdrop-blur-xl border border-white/50 shadow-sm rounded-2xl p-6 mb-8">
-            <div className="grid grid-cols-7 text-center gap-y-4">
+          {/* Calendar Month Grid */}
+          <section className="bg-white/60 backdrop-blur-xl border border-white/50 shadow-sm rounded-2xl p-4 mb-6">
+            <div className="grid grid-cols-7 text-center gap-y-3">
               {/* Day Labels */}
               <span className={cn(typography.caption.md, "font-bold text-outline-variant")}>SUN</span>
               <span className={cn(typography.caption.md, "font-bold text-outline-variant")}>MON</span>
@@ -36,140 +142,197 @@ export default function MobileCalendarPage() {
               <span className={cn(typography.caption.md, "font-bold text-outline-variant")}>FRI</span>
               <span className={cn(typography.caption.md, "font-bold text-outline-variant")}>SAT</span>
 
-              {/* Days (Row 1) */}
-              <span className={cn(typography.body.md, "py-2 text-on-surface-variant opacity-30 font-medium")}>26</span>
-              <span className={cn(typography.body.md, "py-2 text-on-surface-variant opacity-30 font-medium")}>27</span>
-              <span className={cn(typography.body.md, "py-2 text-on-surface-variant opacity-30 font-medium")}>28</span>
-              <span className={cn(typography.body.md, "py-2 text-on-surface-variant opacity-30 font-medium")}>29</span>
-              <span className={cn(typography.body.md, "py-2 text-on-surface-variant opacity-30 font-medium")}>30</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-red active:scale-110 transition-transform")}>1</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>2</span>
+              {/* Grid Cells */}
+              {gridCells.map((cell, idx) => {
+                const dateDocs = getDocsForDate(cell.dateStr);
+                const isSelected = selectedDayDate === cell.dateStr;
+                const isToday = cell.dateStr === todayIso;
 
-              {/* Days (Row 2) */}
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-blue active:scale-110 transition-transform")}>3</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>4</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>5</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-green active:scale-110 transition-transform")}>6</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>7</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>8</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>9</span>
+                const hasExpired = dateDocs.some((d) => d.status === 'expired');
+                const hasExpiringSoon = dateDocs.some((d) => d.status === 'expiring_soon');
+                const hasDocs = dateDocs.length > 0;
 
-              {/* Days (Row 3 - Active Date) */}
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>10</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>11</span>
-              <div className="relative py-2 flex items-center justify-center cursor-pointer">
-                <div className="absolute inset-0 bg-primary rounded-full scale-[0.8] shadow-md shadow-primary/30"></div>
-                <span className={cn(typography.body.md, "relative font-bold text-white z-10")}>12</span>
-              </div>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-orange active:scale-110 transition-transform")}>13</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>14</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-yellow active:scale-110 transition-transform")}>15</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>16</span>
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => cell.isCurrentMonth && cell.dateStr && setSelectedDayDate(isSelected ? null : cell.dateStr)}
+                    className={cn(
+                      "relative py-2 flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all",
+                      !cell.isCurrentMonth && "opacity-30 pointer-events-none",
+                      isSelected && "bg-primary text-white shadow-md font-bold",
+                      isToday && !isSelected && "ring-2 ring-primary ring-offset-1 font-bold text-primary"
+                    )}
+                  >
+                    <span className={cn(typography.body.md, "font-medium")}>{cell.dayNum}</span>
 
-              {/* Row 4 */}
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>17</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-blue active:scale-110 transition-transform")}>18</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>19</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>20</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>21</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer")}>22</span>
-              <span className={cn(typography.body.md, "py-2 font-medium text-on-surface cursor-pointer calendar-dot dot-green active:scale-110 transition-transform")}>23</span>
+                    {/* Expiry Dot Indicator */}
+                    {hasDocs && (
+                      <span
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full mt-0.5",
+                          hasExpired ? "bg-error" : hasExpiringSoon ? "bg-amber-500" : "bg-primary",
+                          isSelected && "bg-white"
+                        )}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
 
-          {/* Timeline: TODAY */}
+          {/* Day Filter Indicator */}
+          {selectedDayDate && (
+            <div className="mb-4 flex items-center justify-between bg-primary/10 p-3 rounded-xl">
+              <span className={cn(typography.body.md, "text-primary font-bold")}>
+                Showing expiries for {formatDisplayDate(selectedDayDate)}
+              </span>
+              <button onClick={() => setSelectedDayDate(null)} className="text-xs text-primary underline font-semibold">
+                Show All
+              </button>
+            </div>
+          )}
+
+          {/* Timeline: EXPIRED */}
+          {expiredDocs.length > 0 && (
+            <section className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={cn(typography.heading.h3, "text-error uppercase tracking-tight")}>EXPIRED</h3>
+                <span className={cn(typography.label.sm, "font-bold text-error")}>{expiredDocs.length} Priority</span>
+              </div>
+              <div className="space-y-4">
+                {expiredDocs.map((doc) => {
+                  const emp = getEmployee(doc.employee_id);
+                  return (
+                    <div key={doc.id} className="relative pl-8">
+                      <div className="timeline-line bg-error/40"></div>
+                      <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-error bg-white flex items-center justify-center z-10">
+                        <div className="w-2 h-2 rounded-full bg-error"></div>
+                      </div>
+                      <div className="bg-white/40 backdrop-blur-md border border-error/30 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-error/10 text-error rounded-full flex items-center justify-center font-bold text-lg shrink-0">
+                            {emp?.avatar_url ? (
+                              <img className="w-full h-full object-cover rounded-full" alt={emp.full_name} src={emp.avatar_url} />
+                            ) : (
+                              (emp?.full_name || "E").charAt(0)
+                            )}
+                          </div>
+                          <div>
+                            <h4 className={cn(typography.heading.h4, "text-on-surface")}>{emp?.full_name || "Team Member"}</h4>
+                            <p className={cn(typography.body.md, "text-error font-medium mt-0.5 flex items-center gap-1")}>
+                              <span className="material-symbols-outlined text-[16px]">{getDocIcon(doc.document_type_name)}</span>
+                              {doc.document_type_name}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={cn(typography.label.sm, "inline-block px-3 py-1 rounded-full bg-error/10 text-error font-bold")}>
+                            {formatDisplayDate(doc.expiry_date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Timeline: EXPIRING THIS WEEK */}
           <section className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h3 className={cn(typography.heading.h3, "text-on-surface uppercase tracking-tight")}>TODAY</h3>
-              <span className={cn(typography.label.sm, "font-bold text-error")}>Priority</span>
+              <h3 className={cn(typography.heading.h3, "text-on-surface uppercase tracking-tight")}>EXPIRING THIS WEEK</h3>
+              <span className={cn(typography.caption.md, "text-on-surface-variant font-medium")}>{expiringThisWeekDocs.length} items</span>
             </div>
-            <div className="space-y-4">
-              <div className="relative pl-8">
-                <div className="timeline-line"></div>
-                <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-error bg-white flex items-center justify-center z-10">
-                  <div className="w-2 h-2 rounded-full bg-error"></div>
-                </div>
-                <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-surface-container rounded-full overflow-hidden border-2 border-white shadow-sm">
-                      <img alt="Ahmed Ali" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGOw5EqSv_wf1gzKZv8FnWgpPJn_wX4q-5XZzvu8pTUZHDtRpc1ow3zmvrG9uUAcPmlp2EK9S8RJE8uUyly0j2_kGiSxPoIWOz4MQAhOa_ONhhuMcy5a9nvjXetIlUNkCLV30ngR-Eid0EuoaPrB4dOcHJyOP5E6JEcH_DQhsSbZCj1o6VrA2OjtTMDtZ4UeOp8qMe5WtNmDBhl5E2HWnWkQ5Ehje0L-YrCceJJFoKfO0IFAbrSvMenKcf63Rroe_4dCYOGnGwxx8" />
-                    </div>
-                    <div>
-                      <h4 className={cn(typography.heading.h4, "text-on-surface")}>Ahmed Ali</h4>
-                      <p className={cn(typography.body.md, "text-on-surface-variant opacity-80 mt-0.5")}>Visa Renewal • 09:00 AM</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={cn(typography.label.sm, "inline-block px-3 py-1 rounded-full bg-error/10 text-error font-bold")}>Expired</span>
-                  </div>
-                </div>
+            {expiringThisWeekDocs.length === 0 ? (
+              <div className="bg-white/40 backdrop-blur-md p-4 rounded-2xl text-center text-on-surface-variant text-sm">
+                No documents expiring this week.
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                {expiringThisWeekDocs.map((doc) => {
+                  const emp = getEmployee(doc.employee_id);
+                  return (
+                    <div key={doc.id} className="relative pl-8">
+                      <div className="timeline-line bg-amber-500/40"></div>
+                      <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-amber-500 bg-white flex items-center justify-center z-10">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      </div>
+                      <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-tertiary/10 text-tertiary rounded-full flex items-center justify-center font-bold shrink-0">
+                            {emp?.avatar_url ? (
+                              <img className="w-full h-full object-cover rounded-full" alt={emp.full_name} src={emp.avatar_url} />
+                            ) : (
+                              (emp?.full_name || "E").charAt(0)
+                            )}
+                          </div>
+                          <div>
+                            <h4 className={cn(typography.heading.h4, "text-on-surface")}>{emp?.full_name || "Team Member"}</h4>
+                            <p className={cn(typography.body.md, "text-on-surface-variant font-medium mt-0.5 flex items-center gap-1")}>
+                              <span className="material-symbols-outlined text-[16px] text-primary">{getDocIcon(doc.document_type_name)}</span>
+                              {doc.document_type_name}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={cn(typography.body.md, "font-bold text-amber-600 block")}>
+                            {formatDisplayDate(doc.expiry_date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
-          {/* Timeline: TOMORROW */}
+          {/* Timeline: UPCOMING */}
           <section className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h3 className={cn(typography.heading.h3, "text-on-surface uppercase tracking-tight")}>TOMORROW</h3>
-              <span className={cn(typography.caption.md, "text-on-surface-variant font-medium")}>1 item</span>
+              <h3 className={cn(typography.heading.h3, "text-on-surface uppercase tracking-tight")}>UPCOMING</h3>
+              <span className={cn(typography.caption.md, "text-on-surface-variant font-medium")}>{upcomingDocs.length} items</span>
             </div>
-            <div className="space-y-4">
-              <div className="relative pl-8">
-                <div className="timeline-line"></div>
-                <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-orange-500 bg-white flex items-center justify-center z-10">
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                </div>
-                <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-surface-container rounded-full overflow-hidden border-2 border-white shadow-sm">
-                      <img alt="Mohammed Hassan" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCD-4mx3RckcpzEsdlZpMmTq-swgDhO01C1wZCVVFCks3l-4Z7cgKb8e72KtXkpkeYqoIMzwO5-dzefkXMMvsJzIOR75zJmvH3XsC7rGKCgs-pqwhOkqgoCGGVHYXyVbr76U5ae7ybUDpuZMz-CekZ-iZgLrZBFGpJd_4id5sQtBkhi1SmXAkXR0mZ6YEznC6ZC9HQbhUpZTnFY8pRsavZnz1P5i_XMPsfoG_D9xRkMJtdg_T_L35Mv5irv15QCB2jAwBZfQoR0-yQ" />
-                    </div>
-                    <div>
-                      <h4 className={cn(typography.heading.h4, "text-on-surface")}>Mohammed Hassan</h4>
-                      <p className={cn(typography.body.md, "text-on-surface-variant opacity-80 mt-0.5")}>Passport Renewal</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={cn(typography.body.md, "font-bold text-orange-600 block")}>2 Days</span>
-                    <span className={cn(typography.caption.sm, "text-on-surface-variant font-medium")}>Remaining</span>
-                  </div>
-                </div>
+            {upcomingDocs.length === 0 ? (
+              <div className="bg-white/40 backdrop-blur-md p-4 rounded-2xl text-center text-on-surface-variant text-sm">
+                No additional upcoming documents.
               </div>
-            </div>
-          </section>
-
-          {/* Timeline: THIS WEEK */}
-          <section className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={cn(typography.heading.h3, "text-on-surface uppercase tracking-tight")}>THIS WEEK</h3>
-              <span className={cn(typography.caption.md, "text-on-surface-variant font-medium")}>1 item</span>
-            </div>
-            <div className="space-y-4">
-              <div className="relative pl-8">
-                <div className="timeline-line opacity-50"></div>
-                <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-yellow-500 bg-white flex items-center justify-center z-10">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                </div>
-                <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-surface-container rounded-full overflow-hidden border-2 border-white shadow-sm">
-                      <img alt="Sarah Khan" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL7zwa4-KlG9oP8LpCzfh6xh-prb9XDBMhjXcn4PqGqPVKkcA53KsaGIJwCV30gKadQkEZq-SwzhNqx1lblyLNoz9O09JbzntuG-NDJAG1GQW_dhGVPuSGgskVbcTzLmkYpdlpQVIV-rTbI2GrQ-XiYZSKVq_VRVb7bTvjk6ZLi3b6DFWjTQXGMLS_reA26twC0S8Gf_L3_skWAuXMO0IlFgRLM7uqdoXdcsrz6NeTwlqI9yryTA30dtZo-YVxBVjXe32X4hPpKm8" />
+            ) : (
+              <div className="space-y-4">
+                {upcomingDocs.map((doc) => {
+                  const emp = getEmployee(doc.employee_id);
+                  return (
+                    <div key={doc.id} className="relative pl-8">
+                      <div className="timeline-line opacity-50"></div>
+                      <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-primary bg-white flex items-center justify-center z-10">
+                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                      </div>
+                      <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold shrink-0">
+                            <span className="material-symbols-outlined">{getDocIcon(doc.document_type_name)}</span>
+                          </div>
+                          <div>
+                            <h4 className={cn(typography.heading.h4, "text-on-surface")}>{emp?.full_name || "Team Member"}</h4>
+                            <p className={cn(typography.body.md, "text-on-surface-variant opacity-80 mt-0.5")}>{doc.document_type_name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={cn(typography.body.md, "font-bold text-primary block")}>
+                            {formatDisplayDate(doc.expiry_date)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className={cn(typography.heading.h4, "text-on-surface")}>Sarah Khan</h4>
-                      <p className={cn(typography.body.md, "text-on-surface-variant opacity-80 mt-0.5")}>Emirates ID Renewal</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={cn(typography.body.md, "font-bold text-yellow-600 block")}>7 Days</span>
-                    <span className={cn(typography.caption.sm, "text-on-surface-variant font-medium")}>Remaining</span>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </section>
         </main>
-
+        
         <MobileBottomNavBar />
       </div>
     </div>
