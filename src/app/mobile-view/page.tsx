@@ -11,7 +11,11 @@ import { useDashboardStats, useEmployees, useDocuments, useConfig, getSmartDocum
 import { formatDisplayDate } from "@/lib/dateUtils";
 
 export default function MobileDashboard() {
-  const [showSplash, setShowSplash] = useState(true);
+  // Only show the splash screen once per session (not on every navigation back to dashboard)
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !sessionStorage.getItem("splashShown");
+  });
 
   const { stats, loading: statsLoading } = useDashboardStats();
   const { employees, loading: empLoading } = useEmployees();
@@ -40,7 +44,10 @@ export default function MobileDashboard() {
       {showSplash && (
         <MobileSplashScreen
           isDataLoaded={isDataLoaded}
-          onComplete={() => setShowSplash(false)}
+          onComplete={() => {
+            sessionStorage.setItem("splashShown", "1");
+            setShowSplash(false);
+          }}
         />
       )}
 
