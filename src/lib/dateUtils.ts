@@ -48,3 +48,14 @@ export function formatSupabaseDate(dateInput: string | Date): string {
 
   return `${year}-${month}-${day}`;
 }
+
+export function getDaysRemaining(expiryDateStr: string | Date | null | undefined): number {
+  if (!expiryDateStr) return 0;
+  const expiry = typeof expiryDateStr === 'string' ? new Date(expiryDateStr) : expiryDateStr;
+  if (isNaN(expiry.getTime())) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  expiry.setHours(0, 0, 0, 0);
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
