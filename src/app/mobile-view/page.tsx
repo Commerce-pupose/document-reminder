@@ -1,18 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import MobileTopAppBar from "./components/MobileTopAppBar";
 import MobileBottomNavBar from "./components/MobileBottomNavBar";
+import MobileSplashScreen from "./components/MobileSplashScreen";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
 import { useDashboardStats, useEmployees, useDocuments, useConfig, getSmartDocumentIcon } from "@/backend/useHooks";
 import { formatDisplayDate } from "@/lib/dateUtils";
 
 export default function MobileDashboard() {
-  const { stats, loading } = useDashboardStats();
-  const { employees } = useEmployees();
-  const { documents, isLive } = useDocuments();
-  const { documentTypes } = useConfig();
+  const [showSplash, setShowSplash] = useState(true);
+
+  const { stats, loading: statsLoading } = useDashboardStats();
+  const { employees, loading: empLoading } = useEmployees();
+  const { documents, isLive, loading: docLoading } = useDocuments();
+  const { documentTypes, loading: configLoading } = useConfig();
+
+  // Pre-loading flag: indicates when all core data fetching is complete
+  const isDataLoaded = !statsLoading && !empLoading && !docLoading && !configLoading;
 
   const getEmployee = (empId: string) => {
     return employees.find((e) => e.id === empId);
@@ -29,6 +36,14 @@ export default function MobileDashboard() {
 
   return (
     <div className="bg-background text-on-surface min-h-screen relative z-[100] pb-32">
+      {/* Mobile Video Splash Screen - Preloads Dashboard Data during playback */}
+      {showSplash && (
+        <MobileSplashScreen
+          isDataLoaded={isDataLoaded}
+          onComplete={() => setShowSplash(false)}
+        />
+      )}
+
       {/* Background layer covering desktop sidebar */}
       <div className="fixed inset-0 bg-background z-[99]"></div>
 
@@ -44,7 +59,7 @@ export default function MobileDashboard() {
                 <p className={cn(typography.label.md, "uppercase tracking-widest text-on-surface-variant/80")}>Total Employees</p>
                 <div className="flex items-start">
                   <h2 className={cn(typography.number.hero, "leading-none tracking-tighter text-on-surface")}>
-                    {loading ? "..." : stats.totalEmployees}
+                    {stats.totalEmployees}
                   </h2>
                 </div>
               </div>
