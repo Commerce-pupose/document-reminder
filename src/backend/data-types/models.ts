@@ -74,6 +74,17 @@ export interface ExpiryReminder {
   document_type_name?: string;
 }
 
+export interface SystemSettings {
+  id?: string;
+  company_name: string;
+  notification_email: string;
+  reminder_days_before: number[];
+  email_notifications_enabled: boolean;
+  auto_renewal_reminders: boolean;
+  date_format: string;
+  updated_at?: string;
+}
+
 export interface DashboardStats {
   totalEmployees: number;
   expiringDocumentsCount: number;

@@ -1,106 +1,158 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
+import { useSettings } from "@/backend/useHooks";
+
+const inputCls =
+  "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium";
 
 export default function SettingsPage() {
+  const { settings, isLive, updateSettings } = useSettings();
+
+  const [companyName, setCompanyName] = useState("");
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [autoRenewalReminders, setAutoRenewalReminders] = useState(true);
+  const [dateFormat, setDateFormat] = useState("DD/MM/YY");
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      setCompanyName(settings.company_name || "Acme Corporation");
+      setNotificationEmail(settings.notification_email || "hr-alerts@acme.com");
+      setEmailNotifications(settings.email_notifications_enabled ?? true);
+      setAutoRenewalReminders(settings.auto_renewal_reminders ?? true);
+      setDateFormat(settings.date_format || "DD/MM/YY");
+    }
+  }, [settings]);
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await updateSettings({
+        company_name: companyName,
+        notification_email: notificationEmail,
+        email_notifications_enabled: emailNotifications,
+        auto_renewal_reminders: autoRenewalReminders,
+        date_format: dateFormat,
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="px-6 md:px-12 py-10 max-w-[1400px] mx-auto w-full space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
-          <h2 className={cn(typography.heading.h1, "text-on-background")}>Settings</h2>
-          <p className={cn(typography.body.lg, "text-on-surface-variant mt-1")}>Manage your profile, preferences, and account security.</p>
-        </div>
-      </div>
-
-      {/* Profile Settings */}
-      <section className="glass-panel-heavy rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center gap-8 shadow-sm">
-        <div className="relative group shrink-0">
-          <div className="w-32 h-32 rounded-full p-1 border-2 border-primary-container relative">
-            <div className="w-full h-full rounded-full p-1 border-2 border-primary/40">
-              <img
-                className="w-full h-full rounded-full object-cover shadow-lg"
-                alt="Sarah Jenkins"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuClJdoBTawLQMPFYwSDLhGXRhjzCBFUeHZmZulbxVX5Xqb7ztoc7Yqg-u2-3rD8WidUgbKa7slH1M8TKYN12RUgsC0F2sDrljo3o1gH_F0WfF0DF_8HTsSDIJpEPwti8keTkeQJOhrn2XH4tPjMmTiPDmhlEXf1v4KDtlDR2qTRpVcf34BqhA2e503qL66IeLEH98bV3UuHVTLYdOdZ-RD4LHrsySqv001c14xMs4T-AgybkLCMdauG2iSGqclpooRuDvXesIh5vVc"
-              />
+          <div className="flex items-center gap-3">
+            <h2 className={cn(typography.heading.h1, "text-on-background")}>System Settings</h2>
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/40 border border-white/60 shadow-sm">
+              <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+              <span className={cn(typography.caption.sm, "text-on-surface font-medium")}>
+                {isLive ? "Supabase Live DB" : "Local State"}
+              </span>
             </div>
           </div>
-          <button className="absolute bottom-1 right-1 bg-primary text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-[20px]">edit</span>
-          </button>
+          <p className={cn(typography.body.lg, "text-on-surface-variant mt-1")}>
+            Manage global workspace preferences, notification channels, and date formats.
+          </p>
         </div>
-        <div className="flex-grow text-center md:text-left">
-          <h2 className={cn(typography.heading.h1, "text-on-surface")}>Sarah Jenkins</h2>
-          <p className={cn(typography.body.lg, "text-on-surface-variant mb-6")}>HR Director • Global Operations</p>
-          <div className="flex flex-wrap justify-center md:justify-start gap-3">
-            <button className={cn(typography.button.md, "bg-primary text-white px-6 py-2.5 rounded-full hover:opacity-90 transition-opacity")}>
-              Edit Profile
-            </button>
-            <button className={cn(typography.button.md, "border border-outline-variant/50 text-on-surface px-6 py-2.5 rounded-full hover:bg-white/40 transition-colors")}>
-              View Public Profile
-            </button>
+
+        <button
+          onClick={handleSaveSettings}
+          disabled={saving}
+          className={cn(
+            typography.button.md,
+            "flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+          )}
+        >
+          <span className="material-symbols-outlined text-[20px]">save</span>
+          <span>{saving ? "Saving..." : savedSuccess ? "Saved Successfully!" : "Save Changes"}</span>
+        </button>
+      </div>
+
+      {/* Organization Profile Settings */}
+      <section className="glass-panel-heavy rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center gap-8 shadow-sm">
+        <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
+          <span className="material-symbols-outlined text-[48px]">corporate_fare</span>
+        </div>
+        <div className="flex-grow w-full space-y-4 text-center md:text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>
+                Organization Name
+              </label>
+              <input
+                className={inputCls}
+                placeholder="Company Name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={cn(typography.label.md, "block text-on-surface-variant uppercase tracking-wider mb-1.5")}>
+                HR Notification Email
+              </label>
+              <input
+                className={inputCls}
+                placeholder="email@company.com"
+                type="email"
+                value={notificationEmail}
+                onChange={(e) => setNotificationEmail(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Account Security */}
-        <section className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary text-[28px]">security</span>
-            <h3 className={cn(typography.heading.h2, "text-on-surface")}>Account Security</h3>
-          </div>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/40 rounded-xl gap-4">
-              <div>
-                <p className={cn(typography.body.lg, "font-bold text-on-surface")}>Password</p>
-                <p className={cn(typography.caption.md, "mt-1")}>Last changed 3 months ago</p>
-              </div>
-              <button className={cn(typography.button.md, "text-primary hover:underline self-start sm:self-auto")}>Change</button>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-white/40 rounded-xl gap-4">
-              <div>
-                <p className={cn(typography.body.lg, "font-bold text-on-surface")}>Two-Factor Auth</p>
-                <p className={cn(typography.caption.md, "mt-1")}>Add an extra layer of security</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input type="checkbox" defaultChecked className="sr-only peer" />
-                <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        {/* Notifications */}
+        {/* Notifications Settings */}
         <section className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">notifications_active</span>
-            <h3 className={cn(typography.heading.h2, "text-on-surface")}>Notifications</h3>
+            <h3 className={cn(typography.heading.h2, "text-on-surface")}>Notification Channels</h3>
           </div>
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <span className={cn(typography.body.lg, "font-medium text-on-surface")}>Email Notifications</span>
+              <div>
+                <span className={cn(typography.body.lg, "font-bold text-on-surface block")}>Email Notifications</span>
+                <span className={cn(typography.caption.sm, "text-on-surface-variant")}>Send automated email alerts before document expiry</span>
+              </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" defaultChecked className="sr-only peer" />
+                <input
+                  type="checkbox"
+                  checked={emailNotifications}
+                  onChange={(e) => setEmailNotifications(e.target.checked)}
+                  className="sr-only peer"
+                />
                 <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
               </label>
             </div>
-            <div className="flex items-center justify-between">
-              <span className={cn(typography.body.lg, "font-medium text-on-surface")}>Push Notifications</span>
+
+            <div className="flex items-center justify-between pt-3 border-t border-white/30">
+              <div>
+                <span className={cn(typography.body.lg, "font-bold text-on-surface block")}>Auto-Renewal Reminders</span>
+                <span className={cn(typography.caption.sm, "text-on-surface-variant")}>Automatically dispatch reminders at 30, 15, and 7 days prior to expiry</span>
+              </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" defaultChecked className="sr-only peer" />
+                <input
+                  type="checkbox"
+                  checked={autoRenewalReminders}
+                  onChange={(e) => setAutoRenewalReminders(e.target.checked)}
+                  className="sr-only peer"
+                />
                 <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
               </label>
             </div>
-            <div className="flex items-center justify-between">
-              <span className={cn(typography.body.lg, "font-medium text-on-surface")}>Desktop Notifications</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
-                <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
-              </label>
-            </div>
-            <p className={cn(typography.caption.md, "pt-3 border-t border-white/30")}>
-              Alerts include: document expiries, system updates, and leave requests.
-            </p>
           </div>
         </section>
 
@@ -108,75 +160,32 @@ export default function SettingsPage() {
         <section className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary text-[28px]">tune</span>
-            <h3 className={cn(typography.heading.h2, "text-on-surface")}>App Preferences</h3>
+            <h3 className={cn(typography.heading.h2, "text-on-surface")}>Regional Preferences</h3>
           </div>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>Theme</label>
-                <select className={cn(typography.body.md, "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none font-medium")}>
-                  <option>Light</option>
-                  <option>Dark</option>
-                  <option>System</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>Language</label>
-                <select className={cn(typography.body.md, "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none font-medium")}>
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                  <option>Arabic</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-2 pt-2">
-              <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>Currency</label>
-              <select className={cn(typography.body.md, "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/20 outline-none font-medium")}>
-                <option>USD ($)</option>
-                <option>EUR (€)</option>
-                <option>GBP (£)</option>
-                <option>AED (د.إ)</option>
+            <div className="space-y-2">
+              <label className={cn(typography.label.md, "font-bold text-on-surface-variant uppercase tracking-wider")}>
+                System Date Format
+              </label>
+              <select
+                className={inputCls}
+                value={dateFormat}
+                onChange={(e) => setDateFormat(e.target.value)}
+              >
+                <option value="DD/MM/YY">DD/MM/YY (e.g. 24/07/26)</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY (e.g. 24/07/2026)</option>
+                <option value="YYYY-MM-DD">YYYY-MM-DD (ISO Format)</option>
               </select>
             </div>
-          </div>
-        </section>
 
-        {/* Subscription & Billing */}
-        <section className="glass-panel-heavy rounded-2xl p-6 sm:p-8 space-y-6 border-2 border-primary/10">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary text-[28px]">credit_card</span>
-              <h3 className={cn(typography.heading.h2, "text-on-surface")}>Subscription</h3>
-            </div>
-            <span className={cn(typography.label.sm, "bg-primary-container text-white px-4 py-1.5 rounded-full shadow-sm")}>
-              Enterprise Plan
-            </span>
-          </div>
-          <div className="p-5 bg-white/40 rounded-xl border border-white/50 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-center mb-2">
-                <span className={cn(typography.body.lg, "font-bold text-on-surface")}>Monthly Billing</span>
-                <span className={cn(typography.number.medium, "text-primary")}>$499.00</span>
-              </div>
-              <p className={cn(typography.caption.md)}>Next billing date: Oct 24, 2026</p>
+            <div className="p-4 bg-primary/10 rounded-xl flex items-center gap-3 mt-4">
+              <span className="material-symbols-outlined text-primary">info</span>
+              <p className={cn(typography.caption.md, "text-on-surface-variant")}>
+                All dates in document cards and tables respect your chosen system date format.
+              </p>
             </div>
           </div>
-          <button className={cn(typography.button.lg, "w-full py-3 bg-on-surface text-white rounded-xl shadow-md hover:bg-on-surface/90 transition-colors active:scale-[0.98]")}>
-            Manage Billing
-          </button>
         </section>
-      </div>
-
-      {/* Footer Info */}
-      <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4 pt-6 border-t border-white/20">
-        <p className={cn(typography.caption.md)}>© 2026 HR Harmony Cloud Solutions. All rights reserved.</p>
-        <div className={cn(typography.button.sm, "flex gap-4 md:gap-6 text-on-surface-variant")}>
-          <a className="hover:text-primary transition-colors" href="#">Privacy Policy</a>
-          <a className="hover:text-primary transition-colors" href="#">Terms of Service</a>
-          <a className="hover:text-primary transition-colors" href="#">Data Security</a>
-        </div>
       </div>
     </div>
   );
