@@ -53,7 +53,7 @@ export default function MobileSplashScreen({ isDataLoaded, onComplete }: MobileS
     >
       <video
         ref={videoRef}
-        src="/splash-animation.mp4"
+        src="/Splash_screen_animation.mp4"
         autoPlay
         muted
         playsInline
