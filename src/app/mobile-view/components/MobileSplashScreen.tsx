@@ -47,13 +47,12 @@ export default function MobileSplashScreen({ isDataLoaded, onComplete }: MobileS
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center overflow-hidden transition-opacity duration-500 ${
-        isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
-      }`}
+      className={`fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center overflow-hidden transition-opacity duration-500 ${isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
     >
       <video
         ref={videoRef}
-        src="/Splash_screen_animation.mp4"
+        src="/Splash_screen_animation2.mp4"
         autoPlay
         muted
         playsInline
