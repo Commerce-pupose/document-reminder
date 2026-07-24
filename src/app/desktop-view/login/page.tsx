@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect, MouseEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
+import { useAuth } from "@/backend/useHooks";
 
 export default function DesktopLoginPage() {
-  const router = useRouter();
+  const { login } = useAuth(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -36,13 +38,17 @@ export default function DesktopLoginPage() {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
     setLoading(true);
-    // Simulate login and redirect to dashboard
-    setTimeout(() => {
-      router.push("/");
-    }, 600);
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setAuthError(err?.message || "Invalid credentials or unauthorized account.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,6 +78,13 @@ export default function DesktopLoginPage() {
             <h2 className={cn(typography.heading.h1, "text-on-surface text-2xl font-bold")}>Welcome Back</h2>
             <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>Please enter your details to sign in.</p>
           </div>
+
+          {authError && (
+            <div className="p-3.5 bg-error/10 text-error rounded-xl text-xs font-semibold border border-error/20 flex items-center gap-2 mb-6">
+              <span className="material-symbols-outlined text-[18px] shrink-0">warning</span>
+              <span>{authError}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Address */}
@@ -138,7 +151,7 @@ export default function DesktopLoginPage() {
               disabled={loading}
               className="w-full bg-primary hover:bg-primary-container text-white py-4 rounded-xl text-headline-md font-bold shadow-lg shadow-primary/20 transform transition-all active:scale-95 hover:-translate-y-[2px] disabled:opacity-50 cursor-pointer"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Verifying Credentials..." : "Sign In"}
             </button>
           </form>
 

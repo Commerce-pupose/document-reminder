@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-import { useSettings } from "@/backend/useHooks";
+import { useSettings, useAuth } from "@/backend/useHooks";
 
 const inputCls =
   "w-full bg-white/40 border border-white/50 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium";
 
 export default function SettingsPage() {
   const { settings, isLive, updateSettings } = useSettings();
+  const { logout } = useAuth();
 
   const [companyName, setCompanyName] = useState("");
   const [notificationEmail, setNotificationEmail] = useState("");
@@ -67,17 +68,30 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleSaveSettings}
-          disabled={saving}
-          className={cn(
-            typography.button.md,
-            "flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
-          )}
-        >
-          <span className="material-symbols-outlined text-[20px]">save</span>
-          <span>{saving ? "Saving..." : savedSuccess ? "Saved Successfully!" : "Save Changes"}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={logout}
+            className={cn(
+              typography.button.md,
+              "flex items-center gap-2 px-6 py-3 bg-error/10 text-error rounded-full border border-error/20 font-bold hover:bg-error/20 transition-all active:scale-95"
+            )}
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+            <span>Sign Out</span>
+          </button>
+
+          <button
+            onClick={handleSaveSettings}
+            disabled={saving}
+            className={cn(
+              typography.button.md,
+              "flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 font-bold"
+            )}
+          >
+            <span className="material-symbols-outlined text-[20px]">save</span>
+            <span>{saving ? "Saving..." : savedSuccess ? "Saved Successfully!" : "Save Changes"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Organization Profile Settings */}

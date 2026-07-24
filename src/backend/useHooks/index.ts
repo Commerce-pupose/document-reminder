@@ -3,3 +3,4 @@ export * from './useDocuments';
 export * from './useConfig';
 export * from './useDashboardStats';
 export * from './useSettings';
+export * from './useAuth';

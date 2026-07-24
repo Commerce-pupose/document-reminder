@@ -1,23 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
+import { useAuth } from "@/backend/useHooks";
 
 export default function MobileLoginPage() {
-  const router = useRouter();
+  const { login } = useAuth(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
     setLoading(true);
-    setTimeout(() => {
-      router.push("/");
-    }, 600);
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setAuthError(err?.message || "Invalid credentials or unauthorized account.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,6 +50,13 @@ export default function MobileLoginPage() {
             <h2 className={cn(typography.heading.h2, "text-on-surface font-bold text-xl")}>Welcome Back</h2>
             <p className={cn(typography.body.md, "text-on-surface-variant text-sm mt-0.5")}>Please enter your details to sign in.</p>
           </div>
+
+          {authError && (
+            <div className="p-3 bg-error/10 text-error rounded-xl text-xs font-semibold border border-error/20 flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-[16px] shrink-0">warning</span>
+              <span>{authError}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Address */}
@@ -109,7 +123,7 @@ export default function MobileLoginPage() {
               disabled={loading}
               className="w-full bg-primary hover:bg-primary-container text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-primary/20 transform transition-all active:scale-95 disabled:opacity-50 mt-2"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Verifying Credentials..." : "Sign In"}
             </button>
           </form>
 

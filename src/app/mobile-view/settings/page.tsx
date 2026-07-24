@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-import { useSettings } from "@/backend/useHooks";
+import { useSettings, useAuth } from "@/backend/useHooks";
 
 export default function MobileSettingsPage() {
   const { settings, isLive, updateSettings } = useSettings();
+  const { logout } = useAuth();
 
   const [companyName, setCompanyName] = useState("");
   const [notificationEmail, setNotificationEmail] = useState("");
@@ -154,18 +155,28 @@ export default function MobileSettingsPage() {
             </div>
           </div>
 
-          {/* Save Button */}
-          <button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            className={cn(
-              typography.button.md,
-              "w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            )}
-          >
-            <span className="material-symbols-outlined text-[20px]">save</span>
-            <span>{saving ? "Saving..." : savedSuccess ? "Saved Successfully!" : "Save Settings"}</span>
-          </button>
+          {/* Save & Logout Buttons */}
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className={cn(
+                typography.button.md,
+                "w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              )}
+            >
+              <span className="material-symbols-outlined text-[20px]">save</span>
+              <span>{saving ? "Saving..." : savedSuccess ? "Saved Successfully!" : "Save Settings"}</span>
+            </button>
+
+            <button
+              onClick={logout}
+              className="w-full py-3.5 bg-error/10 text-error rounded-xl font-bold border border-error/20 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all hover:bg-error/20"
+            >
+              <span className="material-symbols-outlined text-[20px]">logout</span>
+              <span>Sign Out</span>
+            </button>
+          </div>
         </main>
 
         <MobileBottomNavBar />
