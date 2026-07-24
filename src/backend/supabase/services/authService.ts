@@ -14,72 +14,48 @@ export const authService = {
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail || !password) {
-      throw new Error('Please enter both email address and password.');
+      throw new Error('Please enter both your email address and password.');
     }
 
+    if (!cleanEmail.includes('@')) {
+      throw new Error('Invalid email format. Please enter a valid email address.');
+    }
+
+    // Strict authentication when Supabase is configured
     if (isSupabaseConfigured()) {
       const supabase = getSupabaseClient();
       if (supabase) {
-        // Attempt Supabase authentication first
         const { data, error } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
           password,
         });
 
-        if (!error && data.user) {
-          const authUser: AuthUser = {
-            id: data.user.id,
-            email: data.user.email || cleanEmail,
-            name: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-            role: 'HR Admin',
-          };
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-          }
-          return authUser;
+        if (error) {
+          console.error('Supabase authentication error:', error.message);
+          throw new Error(error.message || 'Invalid login credentials. Access denied.');
         }
 
-        // If Supabase Auth returns error, check if email matches authorized employees or system settings
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('id, full_name, email')
-          .eq('email', cleanEmail)
-          .maybeSingle();
-
-        if (empData) {
-          const authUser: AuthUser = {
-            id: empData.id,
-            email: empData.email || cleanEmail,
-            name: empData.full_name,
-            role: 'Authorized Employee',
-          };
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-          }
-          return authUser;
+        if (!data.user) {
+          throw new Error('Invalid login credentials. User account not found.');
         }
+
+        const authUser: AuthUser = {
+          id: data.user.id,
+          email: data.user.email || cleanEmail,
+          name: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
+          role: 'HR Admin',
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
+        }
+
+        return authUser;
       }
     }
 
-    // Fallback mode authorization: allow valid email logins
-    if (!cleanEmail.includes('@')) {
-      throw new Error('Invalid email format. Please enter a valid email address.');
-    }
-    if (password.length < 4) {
-      throw new Error('Password must be at least 4 characters long.');
-    }
-
-    const authUser: AuthUser = {
-      id: 'local_user_' + Date.now(),
-      email: cleanEmail,
-      name: cleanEmail.split('@')[0].replace('.', ' '),
-      role: 'HR Admin',
-    };
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-    }
-    return authUser;
+    // Fallback mode when Supabase Auth URL is unconfigured
+    throw new Error('Supabase authentication service unavailable. Please check configuration.');
   },
 
   async signOut(): Promise<void> {
