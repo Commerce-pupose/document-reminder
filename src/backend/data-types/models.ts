@@ -74,6 +74,23 @@ export interface ExpiryReminder {
   document_type_name?: string;
 }
 
+export interface NotificationRecord {
+  id: string;
+  notification_key?: string;
+  title: string;
+  subtitle: string;
+  employee_name?: string;
+  expiry_date?: string;
+  days_remaining?: number;
+  status: 'expired' | 'expiring_soon' | 'info';
+  document_id?: string;
+  employee_id?: string;
+  is_read: boolean;
+  read_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface SystemSettings {
   id?: string;
   company_name: string;

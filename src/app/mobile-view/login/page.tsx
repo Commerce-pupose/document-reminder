@@ -40,11 +40,11 @@ export default function MobileLoginPage() {
           <div className="w-20 h-20 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-lg flex items-center justify-center p-2 mb-3 overflow-hidden">
             <img
               src="/screen.png"
-              alt="HR Portal Logo"
+              alt="Reminder Logo"
               className="w-full h-full object-contain rounded-xl"
             />
           </div>
-
+          <h1 className={cn(typography.heading.h2, "text-primary text-center font-bold")}>Reminder</h1>
         </div>
 
         {/* Login Card */}
@@ -134,7 +134,7 @@ export default function MobileLoginPage() {
             <p className={cn(typography.caption.md, "text-on-surface-variant text-center")}>
               New to the portal?{" "}
               <a href="#" className="text-primary font-bold hover:underline">
-                Contact HR Admin
+                Contact Admin
               </a>
             </p>
           </div>

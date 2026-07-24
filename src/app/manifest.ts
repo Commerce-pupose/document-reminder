@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "HR Portal - Document & Visa Expiry Reminder",
-    short_name: "HR Portal",
-    description: "HR Core Document & Visa Expiry Management Application",
+    name: "Reminder",
+    short_name: "Reminder",
+    description: "Document Management & Expiry Reminder Application",
     start_url: "/",
     display: "standalone",
     background_color: "#0F172A",

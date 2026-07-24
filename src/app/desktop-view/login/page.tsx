@@ -60,18 +60,18 @@ export default function DesktopLoginPage() {
 
       <main className="relative z-10 w-full max-w-[1300px] grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
 
-        {/* Left Side: screen.png Image Preview Container (Takes half screen width: w-full h-[540px]) */}
+        {/* Left Side: screen.png Image Preview Container */}
         <div className="w-full">
           <div className="glass-panel p-8 rounded-3xl border border-white/60 shadow-2xl overflow-hidden w-full h-[540px] flex items-center justify-center relative group">
             <img
               src="/screen.png"
-              alt="HR Portal Screen Preview"
+              alt="Reminder Screen Preview"
               className="max-h-full max-w-full object-contain rounded-2xl shadow-lg transform group-hover:scale-[1.02] transition-transform duration-500"
             />
           </div>
         </div>
 
-        {/* Right Side: Login Component Card (Takes half screen width: w-full h-[540px]) */}
+        {/* Right Side: Login Component Card */}
         <div className="w-full">
           <div
             ref={cardRef}
@@ -80,7 +80,8 @@ export default function DesktopLoginPage() {
           >
             <div>
               <div className="mb-6">
-                <h2 className={cn(typography.heading.h1, "text-on-surface text-2xl font-bold")}>Welcome Back</h2>
+                <h1 className={cn(typography.heading.h1, "text-primary text-3xl font-bold mb-1")}>Reminder</h1>
+                <h2 className={cn(typography.heading.h2, "text-on-surface text-xl font-semibold")}>Welcome Back</h2>
                 <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>Please enter your details to sign in.</p>
               </div>
 
@@ -164,9 +165,9 @@ export default function DesktopLoginPage() {
             <div>
               <div className="pt-4 border-t border-white/20">
                 <p className={cn(typography.body.md, "text-on-surface-variant text-center")}>
-                  New to the portal?{" "}
+                  New to the app?{" "}
                   <a href="#" className="text-primary font-bold hover:underline">
-                    Contact HR Admin
+                    Contact Admin
                   </a>
                 </p>
               </div>

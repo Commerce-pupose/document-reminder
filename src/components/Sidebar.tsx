@@ -22,10 +22,10 @@ export default function Sidebar() {
     <aside className="hidden md:flex h-screen w-[280px] fixed left-0 top-0 backdrop-blur-[20px] border-r border-white/20 bg-surface-container/60 flex-col py-8 px-5 z-50">
       <div className="mb-12 flex items-center gap-3 px-2">
         <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/50 border border-white/60 shadow-md flex items-center justify-center p-1 shrink-0">
-          <img src="/screen.png" alt="HR Portal Logo" className="w-full h-full object-contain rounded-lg" />
+          <img src="/screen.png" alt="Reminder Logo" className="w-full h-full object-contain rounded-lg" />
         </div>
         <div>
-          <h1 className={cn(typography.heading.h2, "text-primary")}>HR Portal</h1>
+          <h1 className={cn(typography.heading.h2, "text-primary")}>Reminder</h1>
           <p className={cn(typography.caption.sm, "uppercase tracking-widest text-on-surface-variant/70 font-bold")}>Document Management</p>
         </div>
       </div>

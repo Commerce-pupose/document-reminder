@@ -55,10 +55,10 @@ export default function InstallPWA() {
   return (
     <div className="fixed bottom-5 right-5 z-50 max-w-sm bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl border border-slate-700/60 backdrop-blur-md transition-all duration-300 transform translate-y-0 flex items-center gap-3">
       <div className="w-12 h-12 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
-        <img src="/icons/icon-192x192.png" alt="HR Portal Icon" className="w-9 h-9 object-contain" />
+        <img src="/icons/icon-192x192.png" alt="Reminder Icon" className="w-9 h-9 object-contain" />
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-semibold text-slate-100 truncate">HR Portal App</h4>
+        <h4 className="text-sm font-semibold text-slate-100 truncate">Reminder App</h4>
         <p className="text-xs text-slate-400 leading-tight">Install for fast offline access & reminders</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">

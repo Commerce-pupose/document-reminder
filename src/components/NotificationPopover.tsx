@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useDocuments, useEmployees } from "@/backend/useHooks";
 import { formatDisplayDate, getDaysRemaining } from "@/lib/dateUtils";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
 import Link from "next/link";
+import { notificationsService } from "@/backend/supabase/services/notificationsService";
 
 interface NotificationItem {
   id: string;
@@ -18,12 +19,36 @@ interface NotificationItem {
   documentId?: string;
 }
 
+const READ_STORAGE_KEY = "hr_portal_read_notifications_v1";
+
 export default function NotificationPopover() {
   const { documents } = useDocuments();
   const { employees } = useEmployees();
   const [isOpen, setIsOpen] = useState(false);
   const [readIds, setReadIds] = useState<string[]>([]);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Load read notification IDs from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(READ_STORAGE_KEY);
+      if (stored) {
+        setReadIds(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Failed to load read notifications from localStorage", e);
+    }
+  }, []);
+
+  // Save read notification IDs to localStorage
+  const saveReadIds = useCallback((newReadIds: string[]) => {
+    setReadIds(newReadIds);
+    try {
+      localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(newReadIds));
+    } catch (e) {
+      console.error("Failed to save read notifications to localStorage", e);
+    }
+  }, []);
 
   // Close when clicking outside
   useEffect(() => {
@@ -37,7 +62,7 @@ export default function NotificationPopover() {
   }, []);
 
   // Derive notifications from documents & employees
-  const notifications: NotificationItem[] = (() => {
+  const rawNotifications: NotificationItem[] = (() => {
     const list: NotificationItem[] = [];
 
     const getEmpName = (empId: string) => {
@@ -110,16 +135,21 @@ export default function NotificationPopover() {
     return list;
   })();
 
-  const unreadNotifications = notifications.filter((n) => !readIds.includes(n.id));
-  const unreadCount = unreadNotifications.length;
+  // Filter out notifications that have been marked as read so they WILL NOT SHOW UP AGAIN
+  const activeNotifications = rawNotifications.filter((n) => !readIds.includes(n.id));
+  const unreadCount = activeNotifications.length;
 
-  const handleMarkAllRead = () => {
-    setReadIds(notifications.map((n) => n.id));
+  const handleMarkAllRead = async () => {
+    const allIdsToRead = [...new Set([...readIds, ...rawNotifications.map((n) => n.id)])];
+    saveReadIds(allIdsToRead);
+    await notificationsService.markAllAsRead();
   };
 
-  const handleItemClick = (id: string) => {
+  const handleItemClick = async (id: string) => {
     if (!readIds.includes(id)) {
-      setReadIds((prev) => [...prev, id]);
+      const updated = [...readIds, id];
+      saveReadIds(updated);
+      await notificationsService.markAsRead(id);
     }
     setIsOpen(false);
   };
@@ -170,64 +200,56 @@ export default function NotificationPopover() {
 
           {/* Notification List */}
           <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
-            {notifications.length === 0 ? (
+            {activeNotifications.length === 0 ? (
               <div className="p-8 text-center text-slate-500">
-                <span className="material-symbols-outlined text-4xl mb-2 text-slate-400">notifications_off</span>
-                <p className="text-sm font-semibold text-slate-700">All caught up!</p>
-                <p className="text-xs text-slate-500 mt-1">No active document expiry warnings.</p>
+                <span className="material-symbols-outlined text-4xl mb-2 text-slate-400">check_circle</span>
+                <p className="text-sm font-bold text-slate-800">All caught up!</p>
+                <p className="text-xs text-slate-500 mt-1">No unread document expiries or alerts.</p>
               </div>
             ) : (
-              notifications.map((item) => {
-                const isRead = readIds.includes(item.id);
-                return (
-                  <Link
-                    key={item.id}
-                    href="/desktop-view/documents"
-                    onClick={() => handleItemClick(item.id)}
+              activeNotifications.map((item) => (
+                <Link
+                  key={item.id}
+                  href="/desktop-view/documents"
+                  onClick={() => handleItemClick(item.id)}
+                  className="p-4 flex gap-3 items-start transition-colors hover:bg-slate-50/90 block bg-indigo-50/20"
+                >
+                  <div
                     className={cn(
-                      "p-4 flex gap-3 items-start transition-colors hover:bg-slate-50/90 block",
-                      !isRead ? "bg-indigo-50/30" : "opacity-75"
+                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm",
+                      item.status === "expired"
+                        ? "bg-red-50 text-red-600 border border-red-200"
+                        : "bg-amber-50 text-amber-600 border border-amber-200"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm",
-                        item.status === "expired"
-                          ? "bg-red-50 text-red-600 border border-red-200"
-                          : "bg-amber-50 text-amber-600 border border-amber-200"
-                      )}
-                    >
-                      <span className="material-symbols-outlined text-[20px]">
-                        {item.status === "expired" ? "warning" : "schedule"}
+                    <span className="material-symbols-outlined text-[20px]">
+                      {item.status === "expired" ? "warning" : "schedule"}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <h4 className="text-xs font-bold text-slate-900 truncate">{item.title}</h4>
+                      <span
+                        className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0",
+                          item.status === "expired"
+                            ? "bg-red-100 text-red-700 border border-red-200"
+                            : "bg-amber-100 text-amber-800 border border-amber-200"
+                        )}
+                      >
+                        {item.status === "expired" ? "Expired" : `${item.daysRemaining}d left`}
                       </span>
                     </div>
+                    <p className="text-xs text-slate-600 leading-snug line-clamp-2">{item.subtitle}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                      Expiry: {formatDisplayDate(item.expiryDate)}
+                    </p>
+                  </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <h4 className="text-xs font-bold text-slate-900 truncate">{item.title}</h4>
-                        <span
-                          className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0",
-                            item.status === "expired"
-                              ? "bg-red-100 text-red-700 border border-red-200"
-                              : "bg-amber-100 text-amber-800 border border-amber-200"
-                          )}
-                        >
-                          {item.status === "expired" ? "Expired" : `${item.daysRemaining}d left`}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-snug line-clamp-2">{item.subtitle}</p>
-                      <p className="text-[10px] text-slate-400 mt-1 font-medium">
-                        Expiry: {formatDisplayDate(item.expiryDate)}
-                      </p>
-                    </div>
-
-                    {!isRead && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 shrink-0 mt-2 shadow-sm" />
-                    )}
-                  </Link>
-                );
-              })
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 shrink-0 mt-2 shadow-sm" />
+                </Link>
+              ))
             )}
           </div>
 

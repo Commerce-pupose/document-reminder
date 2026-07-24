@@ -19,8 +19,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "HR Portal - Document Management & Visa Expiry Reminder",
-  description: "HR Core Document Management Application and Visa Expiry Reminders",
+  title: "Reminder",
+  description: "Document Management & Expiry Reminder Application",
   manifest: "/manifest.json",
   icons: {
     icon: "/icons/icon-192x192.png",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "HR Portal",
+    title: "Reminder",
   },
 };
 
