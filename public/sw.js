@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hr-portal-v1';
+const CACHE_NAME = 'reminder-app-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -7,6 +7,13 @@ const STATIC_ASSETS = [
   '/icons/apple-touch-icon.png',
   '/icons/maskable-icon-512x512.png'
 ];
+
+// Skip waiting when told to by the client (forces immediate activation)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // Install Event - Precache key static assets
 self.addEventListener('install', (event) => {
