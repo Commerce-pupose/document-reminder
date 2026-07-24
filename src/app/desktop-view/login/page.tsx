@@ -19,8 +19,8 @@ export default function DesktopLoginPage() {
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
       if (!cardRef.current) return;
-      const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
-      const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+      const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
+      const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
       cardRef.current.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
     };
 
@@ -59,7 +59,7 @@ export default function DesktopLoginPage() {
       <div className="floating-orb w-[400px] h-[400px] bg-tertiary-container/20 -bottom-20 -right-20" style={{ animationDelay: "-5s" }}></div>
 
       <main className="relative z-10 w-full max-w-[1300px] grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        
+
         {/* Left Side: screen.png Image Preview Container (Takes half screen width: w-full h-[540px]) */}
         <div className="w-full">
           <div className="glass-panel p-8 rounded-3xl border border-white/60 shadow-2xl overflow-hidden w-full h-[540px] flex items-center justify-center relative group">
