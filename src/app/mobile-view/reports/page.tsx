@@ -1,9 +1,28 @@
+"use client";
+
+import { useState } from "react";
 import MobileReportsTopAppBar from "../components/MobileReportsTopAppBar";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
+import { useDashboardStats, useEmployees, useDocuments, useConfig } from "@/backend/useHooks";
 
 export default function MobileReportsPage() {
+  const { stats, loading } = useDashboardStats();
+  const { employees } = useEmployees();
+  const { documents } = useDocuments();
+  const { documentTypes } = useConfig();
+
+  const [selectedType, setSelectedType] = useState<string>("All");
+
+  const filteredDocs = selectedType === "All"
+    ? documents
+    : documents.filter((d) => (d.document_type_name || "").toLowerCase() === selectedType.toLowerCase());
+
+  const totalFiltered = filteredDocs.length;
+  const validFiltered = filteredDocs.filter((d) => d.status === "valid").length;
+  const complianceRate = totalFiltered > 0 ? Math.round((validFiltered / totalFiltered) * 100) : 100;
+
   return (
     <div className="bg-background text-on-surface min-h-screen relative z-[100] pb-32 overflow-x-hidden">
       {/* Background layer covering desktop sidebar */}
@@ -14,124 +33,102 @@ export default function MobileReportsPage() {
 
         <main className="pt-24 px-4 max-w-md mx-auto space-y-6">
           {/* Filter Chips */}
-          <section className="flex gap-3 overflow-x-auto hide-scrollbar py-2 -mx-2 px-2">
-            <button className={cn(typography.button.sm, "px-6 py-2 rounded-full bg-primary text-white shadow-lg shadow-primary/20 shrink-0")}>All</button>
-            <button className={cn(typography.button.sm, "px-6 py-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant shrink-0 hover:bg-white/60 transition-colors")}>Visa</button>
-            <button className={cn(typography.button.sm, "px-6 py-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant shrink-0 hover:bg-white/60 transition-colors")}>Passport</button>
-            <button className={cn(typography.button.sm, "px-6 py-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant shrink-0 hover:bg-white/60 transition-colors")}>Insurance</button>
+          <section className="flex gap-2 overflow-x-auto hide-scrollbar py-2 -mx-2 px-2">
+            <button
+              onClick={() => setSelectedType("All")}
+              className={cn(
+                typography.button.sm,
+                "px-5 py-2 rounded-full shrink-0 font-bold transition-all",
+                selectedType === "All" ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-white/40 border border-white/60 text-on-surface-variant"
+              )}
+            >
+              All
+            </button>
+            {documentTypes.map((dt) => (
+              <button
+                key={dt.id}
+                onClick={() => setSelectedType(dt.name)}
+                className={cn(
+                  typography.button.sm,
+                  "px-5 py-2 rounded-full shrink-0 font-bold transition-all whitespace-nowrap",
+                  selectedType === dt.name ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-white/40 border border-white/60 text-on-surface-variant"
+                )}
+              >
+                {dt.name}
+              </button>
+            ))}
           </section>
 
           {/* Overview Card */}
           <section className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm shadow-primary/5">
             <div className="relative w-40 h-40 flex items-center justify-center">
-              <div className="absolute inset-0 circular-progress rounded-full opacity-20"></div>
               <svg className="absolute inset-0 transform -rotate-90 w-40 h-40">
-                <circle className="text-primary-container/20" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" strokeWidth="12"></circle>
-                <circle className="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" strokeDasharray="440" strokeDashoffset="26" strokeLinecap="round" strokeWidth="12"></circle>
+                <circle className="text-primary-container/20" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" strokeWidth="12" />
+                <circle
+                  className="text-primary"
+                  cx="80"
+                  cy="80"
+                  fill="transparent"
+                  r="70"
+                  stroke="currentColor"
+                  strokeDasharray="440"
+                  strokeDashoffset={440 - (440 * complianceRate) / 100}
+                  strokeLinecap="round"
+                  strokeWidth="12"
+                />
               </svg>
               <div className="flex flex-col items-center">
-                <span className={cn(typography.number.hero, "leading-none text-on-surface")}>94%</span>
-                <span className={cn(typography.caption.sm, "font-bold text-on-surface-variant mt-1")}>Active</span>
+                <span className={cn(typography.number.hero, "leading-none text-on-surface")}>{loading ? "..." : `${complianceRate}%`}</span>
+                <span className={cn(typography.caption.sm, "font-bold text-on-surface-variant mt-1")}>Compliance</span>
               </div>
             </div>
             <div className="text-center">
               <h2 className={cn(typography.heading.h3, "text-on-surface mb-1")}>Overall Compliance</h2>
-              <p className={cn(typography.body.md, "text-on-surface-variant")}>Top performing across all regions</p>
+              <p className={cn(typography.body.md, "text-on-surface-variant")}>
+                {selectedType === "All" ? "Across all active documents" : `Filtered by ${selectedType}`}
+              </p>
             </div>
           </section>
 
           {/* Metric Grid */}
           <section className="grid grid-cols-2 gap-3 mt-2">
-            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
-              <span className="material-symbols-outlined text-primary">refresh</span>
-              <span className={cn(typography.number.medium, "text-on-surface")}>24</span>
-              <span className={cn(typography.label.md, "text-on-surface-variant")}>Renewals</span>
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-1 shadow-sm">
+              <span className="material-symbols-outlined text-primary text-[24px]">description</span>
+              <span className={cn(typography.number.medium, "text-on-surface")}>{totalFiltered}</span>
+              <span className={cn(typography.label.md, "text-on-surface-variant font-semibold")}>Total Documents</span>
             </div>
-            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
-              <span className="material-symbols-outlined text-tertiary">pending_actions</span>
-              <span className={cn(typography.number.medium, "text-on-surface")}>12</span>
-              <span className={cn(typography.label.md, "text-on-surface-variant")}>Pending</span>
+
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-1 shadow-sm">
+              <span className="material-symbols-outlined text-emerald-600 text-[24px]">verified</span>
+              <span className={cn(typography.number.medium, "text-on-surface")}>{validFiltered}</span>
+              <span className={cn(typography.label.md, "text-on-surface-variant font-semibold")}>Valid Documents</span>
             </div>
-            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
-              <span className="material-symbols-outlined text-secondary">timer</span>
-              <span className={cn(typography.number.medium, "text-on-surface")}>4.2d</span>
-              <span className={cn(typography.label.md, "text-on-surface-variant")}>Process Time</span>
+
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-1 shadow-sm">
+              <span className="material-symbols-outlined text-amber-500 text-[24px]">pending_actions</span>
+              <span className={cn(typography.number.medium, "text-on-surface")}>{stats.expiringDocumentsCount}</span>
+              <span className={cn(typography.label.md, "text-on-surface-variant font-semibold")}>Expiring Soon</span>
             </div>
-            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
-              <span className="material-symbols-outlined text-error">event_busy</span>
-              <span className={cn(typography.number.medium, "text-on-surface")}>0</span>
-              <span className={cn(typography.label.md, "text-on-surface-variant")}>Missed</span>
+
+            <div className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex flex-col gap-1 shadow-sm">
+              <span className="material-symbols-outlined text-error text-[24px]">event_busy</span>
+              <span className={cn(typography.number.medium, "text-error")}>{stats.expiredDocumentsCount}</span>
+              <span className={cn(typography.label.md, "text-on-surface-variant font-semibold")}>Expired</span>
             </div>
           </section>
 
-          {/* Chart Section */}
-          <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-6 flex flex-col gap-4 mt-4 shadow-sm">
-            <div className="flex justify-between items-center">
-              <h3 className={cn(typography.heading.h3, "text-on-surface")}>Monthly Expiry</h3>
-              <span className={cn(typography.button.sm, "text-primary")}>Q3 2026</span>
+          {/* Workforce Overview */}
+          <section className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className={cn(typography.heading.h3, "text-on-surface font-bold")}>Active Workforce</span>
+              <span className={cn(typography.caption.sm, "text-primary font-bold")}>{employees.length} Staff Members</span>
             </div>
-            <div className="flex items-end justify-between h-32 gap-3 pt-4">
-              <div className="flex-1 bg-surface-container-high rounded-t-full transition-all duration-700 hover:bg-primary-container relative group" style={{ height: '60%' }}>
-                <div className={cn(typography.caption.sm, "absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-bold text-primary transition-opacity")}>12</div>
-              </div>
-              <div className="flex-1 bg-surface-container-high rounded-t-full transition-all duration-700 hover:bg-primary-container relative group" style={{ height: '85%' }}>
-                <div className={cn(typography.caption.sm, "absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-bold text-primary transition-opacity")}>18</div>
-              </div>
-              <div className="flex-1 bg-primary rounded-t-full transition-all duration-700 hover:opacity-80 relative group shadow-sm shadow-primary/20" style={{ height: '100%' }}>
-                <div className={cn(typography.caption.sm, "absolute -top-6 left-1/2 -translate-x-1/2 font-bold text-primary")}>24</div>
-              </div>
-              <div className="flex-1 bg-surface-container-high rounded-t-full transition-all duration-700 hover:bg-primary-container relative group" style={{ height: '45%' }}>
-                <div className={cn(typography.caption.sm, "absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-bold text-primary transition-opacity")}>9</div>
-              </div>
-              <div className="flex-1 bg-surface-container-high rounded-t-full transition-all duration-700 hover:bg-primary-container relative group" style={{ height: '70%' }}>
-                <div className={cn(typography.caption.sm, "absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-bold text-primary transition-opacity")}>15</div>
-              </div>
-              <div className="flex-1 bg-surface-container-high rounded-t-full transition-all duration-700 hover:bg-primary-container relative group" style={{ height: '55%' }}>
-                <div className={cn(typography.caption.sm, "absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 font-bold text-primary transition-opacity")}>11</div>
-              </div>
+            <div className="w-full bg-white/50 h-3 rounded-full overflow-hidden">
+              <div className="bg-primary h-full rounded-full" style={{ width: `${complianceRate}%` }} />
             </div>
-            <div className={cn(typography.caption.md, "flex justify-between text-on-surface-variant px-1 font-bold")}>
-              <span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span>
-            </div>
-          </section>
-
-          {/* Recent Activity */}
-          <section className="flex flex-col gap-4 mt-4">
-            <h3 className={cn(typography.heading.h3, "text-on-surface px-1")}>Recent Activity</h3>
-            <div className="flex flex-col gap-3">
-              <div className="bg-white/40 backdrop-blur-md border border-white/50 p-4 rounded-2xl flex items-center gap-4 group hover:scale-[1.02] transition-transform shadow-sm cursor-pointer hover:bg-white/60">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <span className="material-symbols-outlined">check_circle</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className={cn(typography.heading.h4, "text-on-surface truncate")}>Visa Renewed</h4>
-                  <p className={cn(typography.body.md, "text-on-surface-variant truncate mt-0.5")}>John Smith • Engineering</p>
-                </div>
-                <span className={cn(typography.caption.sm, "text-on-surface-variant shrink-0")}>2h ago</span>
-              </div>
-
-              <div className="bg-white/40 backdrop-blur-md border border-white/50 p-4 rounded-2xl flex items-center gap-4 group hover:scale-[1.02] transition-transform shadow-sm cursor-pointer hover:bg-white/60">
-                <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
-                  <span className="material-symbols-outlined">description</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className={cn(typography.heading.h4, "text-on-surface truncate")}>Report Generated</h4>
-                  <p className={cn(typography.body.md, "text-on-surface-variant truncate mt-0.5")}>Annual Compliance Audit</p>
-                </div>
-                <span className={cn(typography.caption.sm, "text-on-surface-variant shrink-0")}>5h ago</span>
-              </div>
-
-              <div className="bg-white/40 backdrop-blur-md border border-white/50 p-4 rounded-2xl flex items-center gap-4 group hover:scale-[1.02] transition-transform shadow-sm cursor-pointer hover:bg-white/60">
-                <div className="w-12 h-12 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
-                  <span className="material-symbols-outlined">verified_user</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className={cn(typography.heading.h4, "text-on-surface truncate")}>Insurance Active</h4>
-                  <p className={cn(typography.body.md, "text-on-surface-variant truncate mt-0.5")}>Group Policy #8829</p>
-                </div>
-                <span className={cn(typography.caption.sm, "text-on-surface-variant shrink-0")}>Yesterday</span>
-              </div>
-            </div>
+            <p className={cn(typography.caption.sm, "text-on-surface-variant")}>
+              {stats.validDocumentsCount} of {totalFiltered} tracked records are fully compliant.
+            </p>
           </section>
         </main>
 
