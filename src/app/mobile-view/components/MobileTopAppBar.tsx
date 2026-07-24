@@ -31,7 +31,7 @@ export default function MobileTopAppBar() {
           >
             <span className="material-symbols-outlined">{showSearch ? "close" : "search"}</span>
           </button>
-          <Link href="/desktop-view/calendar" className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">
+          <Link href="/mobile-view/calendar" className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-white/50 transition-all active:scale-90">
             <span className="material-symbols-outlined">calendar_month</span>
           </Link>
           <NotificationPopover />
