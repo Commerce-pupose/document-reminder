@@ -61,7 +61,7 @@ export default function MobileDocumentsPage() {
     const docNum = (doc.document_number || "").toLowerCase();
     const q = search.toLowerCase();
 
-    const matchesSearch = empName.includes(q) || docName.includes(q) || docNum.includes(q);
+    const matchesSearch = empName.includes(q) || empCompany.toLowerCase().includes(q) || docName.includes(q) || docNum.includes(q);
     const matchesType = selectedType === "All" || docName.includes(selectedType.toLowerCase());
     const matchesCompany = companyFilter === "All" || empCompany === companyFilter;
 

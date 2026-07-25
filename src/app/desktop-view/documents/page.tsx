@@ -60,7 +60,7 @@ export default function DocumentsPage() {
     const docNum = (doc.document_number || '').toLowerCase();
     const q = search.toLowerCase();
 
-    const matchesSearch = empName.includes(q) || docName.includes(q) || docNum.includes(q);
+    const matchesSearch = empName.includes(q) || empCompany.toLowerCase().includes(q) || docName.includes(q) || docNum.includes(q);
     const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || docName.includes(categoryFilter.toLowerCase());
     const matchesCompany = companyFilter === 'all' || empCompany === companyFilter;
