@@ -19,18 +19,17 @@ interface DraftDocument {
 
 export default function MobileEmployeesPage() {
   const { employees, isLive, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
-  const { departments, branches, documentTypes } = useConfig();
+  const { branches, documentTypes } = useConfig();
   const { addDocument } = useDocuments();
 
   const [search, setSearch] = useState("");
-  const [selectedDept, setSelectedDept] = useState("All");
+  const [selectedBranch, setSelectedBranch] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
 
   // Form fields
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [dept, setDept] = useState("");
   const [location, setLocation] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -48,7 +47,6 @@ export default function MobileEmployeesPage() {
     setEditingEmp(null);
     setName("");
     setCode("");
-    setDept(departments[0]?.name || "");
     setLocation(branches[0]?.name || "");
     setEmail("");
     setPhone("");
@@ -69,7 +67,6 @@ export default function MobileEmployeesPage() {
     setEditingEmp(emp);
     setName(emp.full_name || "");
     setCode(emp.employee_code || "");
-    setDept(emp.department_name || (departments[0]?.name || ""));
     setLocation(emp.location || (branches[0]?.name || ""));
     setEmail(emp.email || "");
     setPhone(emp.phone || "");
@@ -121,14 +118,12 @@ export default function MobileEmployeesPage() {
 
   const handleSave = async () => {
     if (!name.trim()) return;
-    const selectedDepartment = dept || (departments.length > 0 ? departments[0].name : "General");
     const selectedLocation = location || (branches.length > 0 ? branches[0].name : "Global Headquarters");
 
     if (editingEmp) {
       await updateEmployee(editingEmp.id, {
         employee_code: code.trim() || editingEmp.employee_code,
         full_name: name.trim(),
-        department_name: selectedDepartment,
         location: selectedLocation,
         email: email.trim(),
         phone: phone.trim(),
@@ -138,7 +133,6 @@ export default function MobileEmployeesPage() {
       const created = await addEmployee({
         employee_code: code.trim() || `NEX-${Math.floor(1000 + Math.random() * 9000)}`,
         full_name: name.trim(),
-        department_name: selectedDepartment,
         location: selectedLocation,
         email: email.trim(),
         phone: phone.trim(),
@@ -185,8 +179,8 @@ export default function MobileEmployeesPage() {
     const matchesSearch =
       emp.full_name.toLowerCase().includes(search.toLowerCase()) ||
       emp.employee_code.toLowerCase().includes(search.toLowerCase());
-    const matchesDept = selectedDept === "All" || emp.department_name === selectedDept;
-    return matchesSearch && matchesDept;
+    const matchesBranch = selectedBranch === "All" || emp.location === selectedBranch;
+    return matchesSearch && matchesBranch;
   });
 
   const getStatusTag = (emp: any) => {
@@ -215,7 +209,7 @@ export default function MobileEmployeesPage() {
     );
   };
 
-  const departmentOptions = ["All", ...departments.map((d) => d.name)];
+  const branchOptions = ["All", ...branches.map((b) => b.name)];
 
   return (
     <div className="bg-background text-on-surface min-h-screen relative z-[100] pb-32 overflow-x-hidden">
@@ -258,25 +252,6 @@ export default function MobileEmployeesPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                 />
-              </div>
-
-              <div>
-                <label className={cn(typography.caption.sm, "block text-on-surface-variant mb-1 font-semibold")}>Department</label>
-                <select
-                  className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 text-sm outline-none"
-                  value={dept || (departments[0]?.name || "")}
-                  onChange={(e) => setDept(e.target.value)}
-                >
-                  {departments.length === 0 ? (
-                    <option value="">General</option>
-                  ) : (
-                    departments.map((d) => (
-                      <option key={d.id} value={d.name}>
-                        {d.name}
-                      </option>
-                    ))
-                  )}
-                </select>
               </div>
 
               <div>
@@ -477,21 +452,21 @@ export default function MobileEmployeesPage() {
             />
           </div>
 
-          {/* Department Filters */}
+          {/* Branch Filters */}
           <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-4 px-4 py-2">
-            {departmentOptions.map((d) => (
+            {branchOptions.map((b) => (
               <button
-                key={d}
-                onClick={() => setSelectedDept(d)}
+                key={b}
+                onClick={() => setSelectedBranch(b)}
                 className={cn(
                   typography.button.sm,
                   "px-6 py-2.5 rounded-full whitespace-nowrap active:scale-95 transition-transform",
-                  selectedDept === d
+                  selectedBranch === b
                     ? "bg-primary text-white shadow-lg shadow-primary/20"
                     : "bg-white/40 backdrop-blur-md border border-white/60 text-on-surface-variant hover:bg-white/60"
                 )}
               >
-                {d}
+                {b}
               </button>
             ))}
           </div>
