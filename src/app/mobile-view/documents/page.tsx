@@ -13,10 +13,11 @@ import { formatDisplayDate } from "@/lib/dateUtils";
 export default function MobileDocumentsPage() {
   const { documents, isLive, deleteDocument } = useDocuments();
   const { employees } = useEmployees();
-  const { documentTypes } = useConfig();
+  const { documentTypes, branches } = useConfig();
 
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState("All");
+  const [companyFilter, setCompanyFilter] = useState("All");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
 
@@ -30,9 +31,18 @@ export default function MobileDocumentsPage() {
     setIsUploadModalOpen(true);
   };
 
+  const getEmployee = (empId: string) => {
+    return employees.find((e) => e.id === empId);
+  };
+
   const getEmployeeName = (empId: string) => {
-    const found = employees.find((e) => e.id === empId);
+    const found = getEmployee(empId);
     return found ? found.full_name : "Team Member";
+  };
+
+  const getEmployeeCompany = (empId: string) => {
+    const found = getEmployee(empId);
+    return found ? (found.location || "Global Headquarters") : "";
   };
 
   const getDocIcon = (docTypeName: string) => {
@@ -44,15 +54,18 @@ export default function MobileDocumentsPage() {
   };
 
   const filteredDocuments = documents.filter((doc) => {
-    const empName = getEmployeeName(doc.employee_id).toLowerCase();
+    const emp = getEmployee(doc.employee_id);
+    const empName = (emp ? emp.full_name : "Team Member").toLowerCase();
+    const empCompany = emp ? (emp.location || "Global Headquarters") : "";
     const docName = (doc.document_type_name || "").toLowerCase();
     const docNum = (doc.document_number || "").toLowerCase();
     const q = search.toLowerCase();
 
     const matchesSearch = empName.includes(q) || docName.includes(q) || docNum.includes(q);
     const matchesType = selectedType === "All" || docName.includes(selectedType.toLowerCase());
+    const matchesCompany = companyFilter === "All" || empCompany === companyFilter;
 
-    return matchesSearch && matchesType;
+    return matchesSearch && matchesType && matchesCompany;
   });
 
   const getStatusBadge = (status: string) => {
@@ -136,6 +149,21 @@ export default function MobileDocumentsPage() {
             />
           </div>
 
+          <div className="mb-4">
+            <select
+              className={cn(typography.body.md, "w-full h-12 px-4 bg-white/40 backdrop-blur-xl border border-white/60 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-sm text-on-surface")}
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+            >
+              <option value="All">All Companies</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.name}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Category Chips */}
           <section className="mb-section-spacing -mx-container-margin overflow-x-auto hide-scrollbar flex items-center gap-3 px-container-margin">
             {categoryChips.map((cat) => (
@@ -190,7 +218,8 @@ export default function MobileDocumentsPage() {
                   </div>
                   <div className="mb-4">
                     <h3 className={cn(typography.heading.h3, "text-on-surface")}>{getEmployeeName(doc.employee_id)}</h3>
-                    <p className={cn(typography.body.md, "text-on-surface-variant")}>No: {doc.document_number || "N/A"}</p>
+                    <p className={cn(typography.caption.sm, "text-on-surface-variant font-medium")}>{getEmployeeCompany(doc.employee_id)}</p>
+                    <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>No: {doc.document_number || "N/A"}</p>
                   </div>
                   <div className="pt-4 border-t border-white/20 flex justify-between items-center">
                     <div>

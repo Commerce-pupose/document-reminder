@@ -11,13 +11,14 @@ import { formatDisplayDate } from '@/lib/dateUtils';
 export default function DocumentsPage() {
   const { documents, isLive, deleteDocument } = useDocuments();
   const { employees } = useEmployees();
-  const { documentTypes } = useConfig();
+  const { documentTypes, branches } = useConfig();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
 
   const openNewDocModal = () => {
     setEditingDoc(null);
@@ -29,9 +30,18 @@ export default function DocumentsPage() {
     setIsUploadModalOpen(true);
   };
 
+  const getEmployee = (empId: string) => {
+    return employees.find((e) => e.id === empId);
+  };
+
   const getEmployeeName = (empId: string) => {
-    const found = employees.find((e) => e.id === empId);
+    const found = getEmployee(empId);
     return found ? found.full_name : 'Team Member';
+  };
+
+  const getEmployeeCompany = (empId: string) => {
+    const found = getEmployee(empId);
+    return found ? (found.location || 'Global Headquarters') : '';
   };
 
   const getDocIcon = (docTypeName: string) => {
@@ -43,7 +53,9 @@ export default function DocumentsPage() {
   };
 
   const filteredDocuments = documents.filter((doc) => {
-    const empName = getEmployeeName(doc.employee_id).toLowerCase();
+    const emp = getEmployee(doc.employee_id);
+    const empName = (emp ? emp.full_name : 'Team Member').toLowerCase();
+    const empCompany = emp ? (emp.location || 'Global Headquarters') : '';
     const docName = (doc.document_type_name || '').toLowerCase();
     const docNum = (doc.document_number || '').toLowerCase();
     const q = search.toLowerCase();
@@ -51,8 +63,9 @@ export default function DocumentsPage() {
     const matchesSearch = empName.includes(q) || docName.includes(q) || docNum.includes(q);
     const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || docName.includes(categoryFilter.toLowerCase());
+    const matchesCompany = companyFilter === 'all' || empCompany === companyFilter;
 
-    return matchesSearch && matchesStatus && matchesCategory;
+    return matchesSearch && matchesStatus && matchesCategory && matchesCompany;
   });
 
   const getStatusBadge = (status: string) => {
@@ -146,6 +159,19 @@ export default function DocumentsPage() {
                 </option>
               ))}
             </select>
+
+            <select
+              className={cn(typography.label.md, "px-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none min-w-[140px]")}
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+            >
+              <option value="all">All Companies</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.name}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </div>
         </section>
 
@@ -195,7 +221,8 @@ export default function DocumentsPage() {
                       </div>
                     </div>
                     <h4 className={cn(typography.heading.h3, "text-on-surface mb-1 truncate")}>{doc.document_type_name}</h4>
-                    <p className={cn(typography.body.md, "text-on-surface-variant mb-2")}>Employee: {getEmployeeName(doc.employee_id)}</p>
+                    <p className={cn(typography.body.md, "text-on-surface-variant mb-1")}>Employee: {getEmployeeName(doc.employee_id)}</p>
+                    <p className={cn(typography.caption.sm, "text-on-surface-variant/80 mb-2 font-medium")}>{getEmployeeCompany(doc.employee_id)}</p>
                     {doc.document_number && (
                       <p className={cn(typography.caption.sm, "text-outline mb-4 font-mono")}>No: {doc.document_number}</p>
                     )}
