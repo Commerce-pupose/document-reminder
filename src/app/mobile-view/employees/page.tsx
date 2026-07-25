@@ -5,7 +5,7 @@ import MobileEmployeesTopAppBar from "../components/MobileEmployeesTopAppBar";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-import { useEmployees, useConfig, useDocuments } from "@/backend/useHooks";
+import { useEmployees, useConfig, useDocuments, getSmartDocumentIcon } from "@/backend/useHooks";
 import { Employee } from "@/backend/data-types/models";
 import { formatSupabaseDate, formatDisplayDate } from "@/lib/dateUtils";
 
@@ -490,35 +490,58 @@ export default function MobileEmployeesPage() {
             )}
 
             {filteredEmployees.map((emp) => (
-              <div key={emp.id} className="bg-white/40 backdrop-blur-md border border-white/50 p-4 rounded-2xl flex items-center justify-between group active:scale-[0.98] transition-all duration-300 shadow-sm cursor-pointer hover:bg-white/60">
-                <div className="flex items-center gap-4">
-                  <div className="profile-ring">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white flex items-center justify-center font-bold text-primary">
-                      {emp.avatar_url ? (
-                        <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
-                      ) : (
-                        emp.full_name.charAt(0)
-                      )}
+              <div key={emp.id} className="bg-white/40 backdrop-blur-md border border-white/50 p-4 rounded-2xl flex flex-col group active:scale-[0.98] transition-all duration-300 shadow-sm cursor-pointer hover:bg-white/60 gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="profile-ring">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-white flex items-center justify-center font-bold text-primary">
+                        {emp.avatar_url ? (
+                          <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
+                        ) : (
+                          emp.full_name.charAt(0)
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className={cn(typography.heading.h3, "text-on-surface")}>{emp.full_name}</h3>
+                      <p className={cn(typography.body.md, "text-outline")}>ID: {emp.employee_code}</p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className={cn(typography.label.sm, "px-2 py-0.5 bg-blue-100/50 text-blue-700 rounded")}>
+                          {emp.department_name || "Staff"}
+                        </span>
+                        {getStatusTag(emp)}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <h3 className={cn(typography.heading.h3, "text-on-surface")}>{emp.full_name}</h3>
-                    <p className={cn(typography.body.md, "text-outline")}>ID: {emp.employee_code}</p>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <span className={cn(typography.label.sm, "px-2 py-0.5 bg-blue-100/50 text-blue-700 rounded")}>
-                        {emp.department_name || "Staff"}
-                      </span>
-                      {getStatusTag(emp)}
-                    </div>
+                  <div className="flex flex-col gap-1">
+                    <button onClick={() => openEditModal(emp)} className="p-1.5 text-on-surface-variant hover:text-primary">
+                      <span className="material-symbols-outlined text-[20px]">edit</span>
+                    </button>
+                    <button onClick={() => deleteEmployee(emp.id)} className="p-1.5 text-on-surface-variant hover:text-error">
+                      <span className="material-symbols-outlined text-[20px]">delete</span>
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => openEditModal(emp)} className="p-2 text-on-surface-variant hover:text-primary">
-                    <span className="material-symbols-outlined text-[20px]">edit</span>
-                  </button>
-                  <button onClick={() => deleteEmployee(emp.id)} className="p-2 text-on-surface-variant hover:text-error">
-                    <span className="material-symbols-outlined text-[20px]">delete</span>
-                  </button>
+                
+                {/* Documents section */}
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-white/30">
+                  {(!emp.documents || emp.documents.length === 0) ? (
+                    <span className={cn(typography.caption.sm, "text-on-surface-variant italic")}>No documents</span>
+                  ) : (
+                    emp.documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/50 border border-white/60 text-xs shadow-sm">
+                        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                          <span className="material-symbols-outlined text-[14px]">
+                            {getSmartDocumentIcon(doc.document_type_name)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-on-surface leading-tight truncate max-w-[120px]">{doc.document_type_name}</span>
+                          <span className="text-on-surface-variant text-[10px] leading-tight">Exp: {formatDisplayDate(doc.expiry_date)}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             ))}

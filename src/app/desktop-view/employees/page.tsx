@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-import { useEmployees, useConfig, useDocuments } from "@/backend/useHooks";
+import { useEmployees, useConfig, useDocuments, getSmartDocumentIcon } from "@/backend/useHooks";
 import { Employee } from "@/backend/data-types/models";
 import { formatSupabaseDate, formatDisplayDate } from "@/lib/dateUtils";
 
@@ -484,13 +484,24 @@ export default function EmployeesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-help" title="Visa">
-                          <span className="material-symbols-outlined text-[18px]">airplane_ticket</span>
-                        </div>
-                        <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-help" title="Passport">
-                          <span className="material-symbols-outlined text-[18px]">public</span>
-                        </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(!emp.documents || emp.documents.length === 0) ? (
+                          <span className={cn(typography.caption.sm, "text-on-surface-variant italic")}>No documents</span>
+                        ) : (
+                          emp.documents.map((doc) => (
+                            <div key={doc.id} className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/40 border border-white/60 text-xs shadow-sm hover:shadow-md transition-shadow">
+                              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <span className="material-symbols-outlined text-[14px]">
+                                  {getSmartDocumentIcon(doc.document_type_name)}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-on-surface leading-tight truncate max-w-[120px]">{doc.document_type_name}</span>
+                                <span className="text-on-surface-variant text-[10px] leading-tight">Exp: {formatDisplayDate(doc.expiry_date)}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">{getDocStatusBadge(emp)}</td>
