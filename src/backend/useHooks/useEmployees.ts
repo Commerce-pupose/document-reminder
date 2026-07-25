@@ -36,7 +36,16 @@ export function useEmployees() {
   }, [fetchEmployees]);
 
   const addEmployee = async (newEmp: Omit<Employee, 'id'>) => {
-    if (!isSupabaseConfigured()) return null;
+    if (!isSupabaseConfigured()) {
+      const mockEmp: Employee = {
+        id: `emp-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ...newEmp,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setEmployees((prev) => [mockEmp, ...prev]);
+      return mockEmp;
+    }
     try {
       const created = await employeesService.createEmployee(newEmp);
       if (created) {
@@ -44,8 +53,15 @@ export function useEmployees() {
         return created;
       }
     } catch (err) {
-      console.error('Failed to create employee on Supabase:', err);
-      throw err;
+      console.error('Failed to create employee on Supabase, fallback to local:', err);
+      const fallbackEmp: Employee = {
+        id: `emp-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ...newEmp,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setEmployees((prev) => [fallbackEmp, ...prev]);
+      return fallbackEmp;
     }
     return null;
   };

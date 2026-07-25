@@ -5,6 +5,7 @@ import UploadDocumentModal from '@/components/UploadDocumentModal';
 import { cn } from '@/lib/cn';
 import { typography } from '@/config/typography';
 import { useDocuments, useEmployees, useConfig, getSmartDocumentIcon } from '@/backend/useHooks';
+import { DocumentItem } from '@/backend/data-types/models';
 import { formatDisplayDate } from '@/lib/dateUtils';
 
 export default function DocumentsPage() {
@@ -12,10 +13,21 @@ export default function DocumentsPage() {
   const { employees } = useEmployees();
   const { documentTypes } = useConfig();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  const openNewDocModal = () => {
+    setEditingDoc(null);
+    setIsUploadModalOpen(true);
+  };
+
+  const openEditModal = (doc: DocumentItem) => {
+    setEditingDoc(doc);
+    setIsUploadModalOpen(true);
+  };
 
   const getEmployeeName = (empId: string) => {
     const found = employees.find((e) => e.id === empId);
@@ -90,7 +102,7 @@ export default function DocumentsPage() {
           <div className="flex gap-3">
             <button 
               className={cn(typography.button.md, "flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full shadow-lg shadow-primary/30 hover:brightness-110 transition-all active:scale-95")}
-              onClick={() => setIsUploadModalOpen(true)}
+              onClick={openNewDocModal}
             >
               <span className="material-symbols-outlined">add</span>
               New Document
@@ -148,7 +160,7 @@ export default function DocumentsPage() {
                   Upload a new document to assign it to an employee.
                 </p>
                 <button
-                  onClick={() => setIsUploadModalOpen(true)}
+                  onClick={openNewDocModal}
                   className={cn(typography.button.md, "px-6 py-2.5 bg-primary text-white rounded-full shadow-md")}
                 >
                   Upload First Document
@@ -164,8 +176,15 @@ export default function DocumentsPage() {
                           {getDocIcon(doc.document_type_name)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         {getStatusBadge(doc.status)}
+                        <button
+                          onClick={() => openEditModal(doc)}
+                          className="p-1 text-on-surface-variant hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
+                          title="Edit Document"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
                         <button
                           onClick={() => deleteDocument(doc.id)}
                           className="p-1 text-on-surface-variant hover:text-error rounded-full hover:bg-error/10 transition-colors"
@@ -180,9 +199,16 @@ export default function DocumentsPage() {
                     {doc.document_number && (
                       <p className={cn(typography.caption.sm, "text-outline mb-4 font-mono")}>No: {doc.document_number}</p>
                     )}
-                    <div className={cn(typography.label.md, "flex items-center gap-2 text-on-surface-variant mt-auto pt-4 border-t border-white/20")}>
-                      <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                      Exp: {formatDisplayDate(doc.expiry_date)}
+                    <div className={cn(typography.label.md, "flex items-center justify-between text-on-surface-variant mt-auto pt-4 border-t border-white/20")}>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+                        <span>Exp: {formatDisplayDate(doc.expiry_date)}</span>
+                      </div>
+                      {doc.issuing_country && (
+                        <span className="text-xs px-2 py-0.5 bg-surface-container/60 rounded font-semibold text-on-surface-variant">
+                          {doc.issuing_country}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -210,8 +236,10 @@ export default function DocumentsPage() {
       </div>
       <UploadDocumentModal 
         isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
+        onClose={() => setIsUploadModalOpen(false)}
+        editingDocument={editingDoc}
       />
     </>
   );
 }
+

@@ -84,18 +84,22 @@ export const employeesService = {
     const supabase = getSupabaseClient();
     if (!supabase) return null;
 
-    const payload: any = {
+    const rawPayload: Record<string, any> = {
       employee_code: employee.employee_code,
       full_name: employee.full_name,
       avatar_url: employee.avatar_url,
-      department_name: employee.department_name,
-      department_id: employee.department_id,
+      department_name: employee.department_name || null,
+      department_id: employee.department_id || null,
       location: employee.location,
       email: employee.email,
       phone: employee.phone,
       position: employee.position,
       status: employee.status || 'active',
     };
+
+    const payload = Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+    );
 
     const { data, error } = await supabase
       .from('employees')
@@ -104,8 +108,9 @@ export const employeesService = {
       .single();
 
     if (error) {
-      console.error('Error creating employee:', error);
-      throw error;
+      const errMsg = error.message || error.details || error.hint || JSON.stringify(error);
+      console.error('Error creating employee:', errMsg);
+      throw new Error(errMsg);
     }
 
     const created = data as any;
@@ -131,8 +136,12 @@ export const employeesService = {
     const supabase = getSupabaseClient();
     if (!supabase) return false;
 
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== undefined)
+    );
+
     const payload: any = {
-      ...updates,
+      ...cleanUpdates,
       updated_at: new Date().toISOString(),
     };
 
@@ -142,8 +151,9 @@ export const employeesService = {
       .eq('id', id);
 
     if (error) {
-      console.error('Error updating employee:', error);
-      throw error;
+      const errMsg = error.message || error.details || error.hint || JSON.stringify(error);
+      console.error('Error updating employee:', errMsg);
+      throw new Error(errMsg);
     }
 
     return true;
@@ -156,8 +166,9 @@ export const employeesService = {
     const { error } = await supabase.from('employees').delete().eq('id', id);
 
     if (error) {
-      console.error('Error deleting employee:', error);
-      throw error;
+      const errMsg = error.message || error.details || error.hint || JSON.stringify(error);
+      console.error('Error deleting employee:', errMsg);
+      throw new Error(errMsg);
     }
 
     return true;

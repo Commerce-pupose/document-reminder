@@ -5,21 +5,16 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
 import { useConfig, getSmartDocumentIcon } from "@/backend/useHooks";
-import { Branch, Department, DocumentType } from "@/backend/data-types/models";
-
-const DEPT_COLORS = ["#4648d4", "#7f458d", "#4b5a9c", "#ba1a1a", "#2e7d32", "#f57c00"];
+import { Branch, DocumentType } from "@/backend/data-types/models";
 
 export default function MobileConfigPage() {
-  const [activeTab, setActiveTab] = useState<"branches" | "departments" | "documents">("branches");
+  const [activeTab, setActiveTab] = useState<"branches" | "documents">("branches");
   const {
     branches,
-    departments,
     documentTypes,
     isLive,
     addBranch,
     deleteBranch,
-    addDepartment,
-    deleteDepartment,
     addDocumentType,
     deleteDocumentType,
   } = useConfig();
@@ -28,10 +23,6 @@ export default function MobileConfigPage() {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [branchName, setBranchName] = useState("");
   const [branchSubtitle, setBranchSubtitle] = useState("");
-
-  const [deptName, setDeptName] = useState("");
-  const [deptEmpCount, setDeptEmpCount] = useState("");
-  const [deptColor, setDeptColor] = useState(DEPT_COLORS[0]);
 
   const [docName, setDocName] = useState("");
   const [docCategory, setDocCategory] = useState("");
@@ -42,18 +33,6 @@ export default function MobileConfigPage() {
     await addBranch({ name: branchName, subtitle: branchSubtitle || "Branch" });
     setBranchName("");
     setBranchSubtitle("");
-    setShowAddModal(false);
-  };
-
-  const handleAddDept = async () => {
-    if (!deptName.trim()) return;
-    await addDepartment({
-      name: deptName,
-      employees_count: Number(deptEmpCount) || 0,
-      color: deptColor,
-    });
-    setDeptName("");
-    setDeptEmpCount("");
     setShowAddModal(false);
   };
 
@@ -97,7 +76,7 @@ export default function MobileConfigPage() {
           <div className="relative glass-modal rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h3 className={cn(typography.heading.h3, "text-on-surface")}>
-                Add {activeTab === "branches" ? "Branch" : activeTab === "departments" ? "Department" : "Document Type"}
+                Add {activeTab === "branches" ? "Branch" : "Document Type"}
               </h3>
               <button onClick={() => setShowAddModal(false)} className="p-1 text-on-surface-variant hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
@@ -120,37 +99,6 @@ export default function MobileConfigPage() {
                 />
                 <button onClick={handleAddBranch} className="w-full py-2.5 bg-primary text-white rounded-xl font-medium shadow-md">
                   Save Branch
-                </button>
-              </div>
-            )}
-
-            {activeTab === "departments" && (
-              <div className="space-y-3">
-                <input
-                  className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"
-                  placeholder="Department Name"
-                  value={deptName}
-                  onChange={(e) => setDeptName(e.target.value)}
-                />
-                <input
-                  className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"
-                  placeholder="Employee Count"
-                  type="number"
-                  value={deptEmpCount}
-                  onChange={(e) => setDeptEmpCount(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  {DEPT_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      style={{ backgroundColor: c }}
-                      onClick={() => setDeptColor(c)}
-                      className={`w-6 h-6 rounded-full ${deptColor === c ? "ring-2 ring-offset-2 ring-primary" : ""}`}
-                    />
-                  ))}
-                </div>
-                <button onClick={handleAddDept} className="w-full py-2.5 bg-primary text-white rounded-xl font-medium shadow-md">
-                  Save Department
                 </button>
               </div>
             )}
@@ -199,12 +147,6 @@ export default function MobileConfigPage() {
               Branches
             </button>
             <button
-              onClick={() => setActiveTab("departments")}
-              className={cn(typography.button.sm, "relative z-10 flex-1 py-3 transition-colors", activeTab === "departments" ? "text-primary font-bold" : "text-on-surface-variant")}
-            >
-              Departments
-            </button>
-            <button
               onClick={() => setActiveTab("documents")}
               className={cn(typography.button.sm, "relative z-10 flex-1 py-3 transition-colors", activeTab === "documents" ? "text-primary font-bold" : "text-on-surface-variant")}
             >
@@ -213,9 +155,9 @@ export default function MobileConfigPage() {
 
             {/* Sliding Background */}
             <div
-              className="absolute top-1.5 h-[calc(100%-12px)] w-[calc(33.33%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-in-out"
+              className="absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-in-out"
               style={{
-                transform: `translateX(${activeTab === "branches" ? "4px" : activeTab === "departments" ? "calc(100% + 4px)" : "calc(200% + 4px)"})`
+                transform: `translateX(${activeTab === "branches" ? "4px" : "calc(100% + 4px)"})`
               }}
             ></div>
           </div>
@@ -248,41 +190,6 @@ export default function MobileConfigPage() {
                 <button
                   onClick={() => deleteBranch(b.id)}
                   className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-white/20 shrink-0"
-                >
-                  <span className="material-symbols-outlined">delete</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Tab Content: Departments */}
-        {activeTab === "departments" && (
-          <div className="flex flex-col gap-stack-gap animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className={cn(typography.heading.h3, "text-on-surface")}>{departments.length} Departments</h4>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className={cn(typography.button.sm, "flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full shadow-lg shadow-primary/20")}
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span> Add Dept
-              </button>
-            </div>
-
-            {departments.map((d) => (
-              <div key={d.id} className="glass-card bg-white/40 p-card-padding rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0" style={{ backgroundColor: `${d.color}20`, color: d.color }}>
-                    <span className="material-symbols-outlined">engineering</span>
-                  </div>
-                  <div>
-                    <p className={cn(typography.heading.h4, "text-on-surface")}>{d.name}</p>
-                    <p className={cn(typography.caption.md, "text-on-surface-variant")}>{d.employees_count || 0} Employees</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => deleteDepartment(d.id)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error shrink-0"
                 >
                   <span className="material-symbols-outlined">delete</span>
                 </button>
@@ -336,3 +243,4 @@ export default function MobileConfigPage() {
     </div>
   );
 }
+

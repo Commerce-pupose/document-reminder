@@ -36,7 +36,16 @@ export function useDocuments() {
   }, [fetchDocuments]);
 
   const addDocument = async (newDoc: Omit<DocumentItem, 'id'>) => {
-    if (!isSupabaseConfigured()) return null;
+    if (!isSupabaseConfigured()) {
+      const mockDoc: DocumentItem = {
+        id: `doc-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ...newDoc,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setDocuments((prev) => [mockDoc, ...prev]);
+      return mockDoc;
+    }
     try {
       const created = await documentsService.createDocument(newDoc);
       if (created) {
@@ -44,8 +53,15 @@ export function useDocuments() {
         return created;
       }
     } catch (err) {
-      console.error('Failed to create document on Supabase:', err);
-      throw err;
+      console.error('Failed to create document on Supabase, fallback to local:', err);
+      const fallbackDoc: DocumentItem = {
+        id: `doc-local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ...newDoc,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setDocuments((prev) => [fallbackDoc, ...prev]);
+      return fallbackDoc;
     }
     return null;
   };

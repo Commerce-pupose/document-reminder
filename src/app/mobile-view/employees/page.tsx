@@ -5,12 +5,22 @@ import MobileEmployeesTopAppBar from "../components/MobileEmployeesTopAppBar";
 import MobileBottomNavBar from "../components/MobileBottomNavBar";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-import { useEmployees, useConfig } from "@/backend/useHooks";
+import { useEmployees, useConfig, useDocuments } from "@/backend/useHooks";
 import { Employee } from "@/backend/data-types/models";
+import { formatSupabaseDate, formatDisplayDate } from "@/lib/dateUtils";
+
+interface DraftDocument {
+  id: string;
+  document_type_name: string;
+  document_number: string;
+  expiry_date: string;
+  issuing_country: string;
+}
 
 export default function MobileEmployeesPage() {
   const { employees, isLive, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
-  const { departments, branches } = useConfig();
+  const { departments, branches, documentTypes } = useConfig();
+  const { addDocument } = useDocuments();
 
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("All");
@@ -26,6 +36,14 @@ export default function MobileEmployeesPage() {
   const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
 
+  // Document upload fields for mobile modal (Multiple docs support)
+  const [attachDocument, setAttachDocument] = useState(false);
+  const [draftDocs, setDraftDocs] = useState<DraftDocument[]>([]);
+  const [docType, setDocType] = useState("");
+  const [docNumber, setDocNumber] = useState("");
+  const [docExpiryDate, setDocExpiryDate] = useState("");
+  const [docIssuingCountry, setDocIssuingCountry] = useState("UAE");
+
   const openAddModal = () => {
     setEditingEmp(null);
     setName("");
@@ -35,6 +53,15 @@ export default function MobileEmployeesPage() {
     setEmail("");
     setPhone("");
     setPosition("");
+
+    // Reset doc fields
+    setAttachDocument(false);
+    setDraftDocs([]);
+    setDocType(documentTypes[0]?.name || "Work Visa");
+    setDocNumber("");
+    setDocExpiryDate("");
+    setDocIssuingCountry("UAE");
+
     setShowModal(true);
   };
 
@@ -47,7 +74,49 @@ export default function MobileEmployeesPage() {
     setEmail(emp.email || "");
     setPhone(emp.phone || "");
     setPosition(emp.position || "");
+    setAttachDocument(false);
+    setDraftDocs([]);
     setShowModal(true);
+  };
+
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    const digits = val.replace(/\D/g, "").slice(0, 6);
+    if (digits.length >= 5) {
+      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 6)}`;
+    } else if (digits.length >= 3) {
+      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+    } else {
+      val = digits;
+    }
+    setDocExpiryDate(val);
+  };
+
+  const handleNativePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      setDocExpiryDate(formatDisplayDate(e.target.value, true));
+    }
+  };
+
+  const handleAddDraftDoc = () => {
+    if (!docExpiryDate.trim()) {
+      alert("Please enter an expiry date (dd/mm/yy).");
+      return;
+    }
+    const newDoc: DraftDocument = {
+      id: `draft-${Date.now()}-${Math.random()}`,
+      document_type_name: docType || (documentTypes[0]?.name || "Work Visa"),
+      document_number: docNumber.trim() || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+      expiry_date: docExpiryDate.trim(),
+      issuing_country: docIssuingCountry.trim() || "UAE",
+    };
+    setDraftDocs((prev) => [...prev, newDoc]);
+    setDocNumber("");
+    setDocExpiryDate("");
+  };
+
+  const handleRemoveDraftDoc = (id: string) => {
+    setDraftDocs((prev) => prev.filter((d) => d.id !== id));
   };
 
   const handleSave = async () => {
@@ -66,7 +135,7 @@ export default function MobileEmployeesPage() {
         position: position.trim(),
       });
     } else {
-      await addEmployee({
+      const created = await addEmployee({
         employee_code: code.trim() || `NEX-${Math.floor(1000 + Math.random() * 9000)}`,
         full_name: name.trim(),
         department_name: selectedDepartment,
@@ -77,6 +146,36 @@ export default function MobileEmployeesPage() {
         status: "active",
         avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150`,
       });
+
+      const docsToSave = [...draftDocs];
+      if (attachDocument && docExpiryDate.trim()) {
+        docsToSave.push({
+          id: `draft-pending`,
+          document_type_name: docType || (documentTypes[0]?.name || "Work Visa"),
+          document_number: docNumber.trim() || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+          expiry_date: docExpiryDate.trim(),
+          issuing_country: docIssuingCountry.trim() || "UAE",
+        });
+      }
+
+      if (created && created.id && docsToSave.length > 0) {
+        for (const d of docsToSave) {
+          const supabaseDate = formatSupabaseDate(d.expiry_date);
+          const today = new Date();
+          const exp = new Date(supabaseDate);
+          const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const status = diffDays < 0 ? "expired" : diffDays <= 90 ? "expiring_soon" : "valid";
+
+          await addDocument({
+            employee_id: created.id,
+            document_type_name: d.document_type_name,
+            document_number: d.document_number,
+            issuing_country: d.issuing_country,
+            expiry_date: supabaseDate,
+            status,
+          });
+        }
+      }
     }
 
     setShowModal(false);
@@ -231,6 +330,128 @@ export default function MobileEmployeesPage() {
                 />
               </div>
 
+              {/* Attach Initial Document (For new employees on Mobile - Multiple Docs) */}
+              {!editingEmp && (
+                <div className="pt-3 border-t border-outline-variant/20">
+                  <div
+                    className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-white/50 border border-outline-variant/30"
+                    onClick={() => setAttachDocument(!attachDocument)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-[20px]">note_add</span>
+                      <div>
+                        <p className={cn(typography.caption.sm, "font-bold text-on-surface")}>
+                          Upload Documents ({draftDocs.length})
+                        </p>
+                        <p className="text-[11px] text-on-surface-variant">Attach Visa, Passport or IDs</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={attachDocument}
+                      onChange={(e) => setAttachDocument(e.target.checked)}
+                      className="w-4 h-4 accent-primary"
+                    />
+                  </div>
+
+                  {attachDocument && (
+                    <div className="space-y-3 p-3 mt-2 bg-white/30 rounded-xl border border-outline-variant/30 animate-in fade-in duration-200">
+                      {/* List of draft docs */}
+                      {draftDocs.length > 0 && (
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold uppercase text-on-surface-variant">Attached ({draftDocs.length})</label>
+                          <div className="flex flex-col gap-1.5">
+                            {draftDocs.map((d) => (
+                              <div key={d.id} className="flex items-center justify-between p-2 bg-white/80 border border-primary/20 rounded-lg text-xs">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <span className="material-symbols-outlined text-[16px] text-primary shrink-0">description</span>
+                                  <span className="font-bold text-on-surface truncate">{d.document_type_name}</span>
+                                  <span className="text-on-surface-variant text-[11px]">({d.document_number})</span>
+                                </div>
+                                <button type="button" onClick={() => handleRemoveDraftDoc(d.id)} className="text-error hover:opacity-80 p-0.5">
+                                  <span className="material-symbols-outlined text-[14px]">close</span>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className={cn(typography.caption.sm, "block text-on-surface-variant mb-1 font-semibold")}>Document Type</label>
+                        <select
+                          className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 text-sm outline-none"
+                          value={docType}
+                          onChange={(e) => setDocType(e.target.value)}
+                        >
+                          {documentTypes.length === 0 ? (
+                            <>
+                              <option>Work Visa</option>
+                              <option>Passport</option>
+                              <option>Emirates ID</option>
+                              <option>Labour Card</option>
+                              <option>Insurance Card</option>
+                            </>
+                          ) : (
+                            documentTypes.map((dt) => (
+                              <option key={dt.id} value={dt.name}>
+                                {dt.name}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className={cn(typography.caption.sm, "block text-on-surface-variant mb-1 font-semibold")}>Document Number</label>
+                        <input
+                          className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"
+                          placeholder="e.g. V-98234"
+                          value={docNumber}
+                          onChange={(e) => setDocNumber(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={cn(typography.caption.sm, "block text-on-surface-variant mb-1 font-semibold")}>Expiry Date *</label>
+                        <div className="relative flex items-center">
+                          <input
+                            className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 pr-10 text-sm outline-none focus:border-primary"
+                            placeholder="dd/mm/yy"
+                            maxLength={8}
+                            value={docExpiryDate}
+                            onChange={handleDateInputChange}
+                          />
+                          <label className="absolute right-3 cursor-pointer text-primary hover:opacity-80 flex items-center" title="Select date">
+                            <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                            <input type="date" className="sr-only" onChange={handleNativePickerChange} />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={cn(typography.caption.sm, "block text-on-surface-variant mb-1 font-semibold")}>Issuing Country</label>
+                        <input
+                          className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"
+                          placeholder="e.g. UAE"
+                          value={docIssuingCountry}
+                          onChange={(e) => setDocIssuingCountry(e.target.value)}
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleAddDraftDoc}
+                        className="w-full py-2 bg-primary/10 text-primary border border-primary/30 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                        <span>Add Document To List</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button onClick={handleSave} className="w-full py-3 bg-primary text-white rounded-xl font-medium shadow-md active:scale-95 transition-transform mt-2">
                 {editingEmp ? "Update Employee" : "Save Employee"}
               </button>
@@ -238,6 +459,7 @@ export default function MobileEmployeesPage() {
           </div>
         </div>
       )}
+
 
       <div className="relative z-[100]">
         <MobileEmployeesTopAppBar />

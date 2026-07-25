@@ -3,39 +3,64 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
-import { useEmployees, useConfig } from "@/backend/useHooks";
+import { useEmployees, useConfig, useDocuments } from "@/backend/useHooks";
 import { Employee } from "@/backend/data-types/models";
+import { formatSupabaseDate, formatDisplayDate } from "@/lib/dateUtils";
+
+interface DraftDocument {
+  id: string;
+  document_type_name: string;
+  document_number: string;
+  expiry_date: string;
+  issuing_country: string;
+}
 
 const inputCls =
   "w-full bg-surface-container/50 border border-outline-variant/40 rounded-xl px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all";
 
 export default function EmployeesPage() {
   const { employees, isLive, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
-  const { departments, branches } = useConfig();
+  const { branches, documentTypes } = useConfig();
+  const { addDocument } = useDocuments();
 
   const [search, setSearch] = useState("");
-  const [selectedDept, setSelectedDept] = useState("all");
+  const [selectedBranch, setSelectedBranch] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
 
   // Form state
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [dept, setDept] = useState("");
   const [location, setLocation] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
 
+  // Document upload state while adding employee (Multiple docs support)
+  const [attachDocument, setAttachDocument] = useState(false);
+  const [draftDocs, setDraftDocs] = useState<DraftDocument[]>([]);
+  const [docType, setDocType] = useState("");
+  const [docNumber, setDocNumber] = useState("");
+  const [docExpiryDate, setDocExpiryDate] = useState("");
+  const [docIssuingCountry, setDocIssuingCountry] = useState("UAE");
+
   const openAddModal = () => {
     setEditingEmp(null);
     setName("");
     setCode("");
-    setDept(departments[0]?.name || "");
     setLocation(branches[0]?.name || "");
     setEmail("");
     setPhone("");
     setPosition("");
+
+    // Reset document fields and draft list
+    setAttachDocument(false);
+    setDraftDocs([]);
+    setDocType(documentTypes[0]?.name || "Work Visa");
+    setDocNumber("");
+    setDocExpiryDate("");
+    setDocIssuingCountry("UAE");
+
     setShowModal(true);
   };
 
@@ -43,24 +68,64 @@ export default function EmployeesPage() {
     setEditingEmp(emp);
     setName(emp.full_name || "");
     setCode(emp.employee_code || "");
-    setDept(emp.department_name || (departments[0]?.name || ""));
     setLocation(emp.location || (branches[0]?.name || ""));
     setEmail(emp.email || "");
     setPhone(emp.phone || "");
     setPosition(emp.position || "");
+    setAttachDocument(false);
+    setDraftDocs([]);
     setShowModal(true);
+  };
+
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    const digits = val.replace(/\D/g, "").slice(0, 6);
+    if (digits.length >= 5) {
+      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 6)}`;
+    } else if (digits.length >= 3) {
+      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+    } else {
+      val = digits;
+    }
+    setDocExpiryDate(val);
+  };
+
+  const handleNativePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      setDocExpiryDate(formatDisplayDate(e.target.value, true));
+    }
+  };
+
+  const handleAddDraftDoc = () => {
+    if (!docExpiryDate.trim()) {
+      alert("Please enter an expiry date (dd/mm/yy).");
+      return;
+    }
+    const newDoc: DraftDocument = {
+      id: `draft-${Date.now()}-${Math.random()}`,
+      document_type_name: docType || (documentTypes[0]?.name || "Work Visa"),
+      document_number: docNumber.trim() || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+      expiry_date: docExpiryDate.trim(),
+      issuing_country: docIssuingCountry.trim() || "UAE",
+    };
+    setDraftDocs((prev) => [...prev, newDoc]);
+    // Reset inputs for next document
+    setDocNumber("");
+    setDocExpiryDate("");
+  };
+
+  const handleRemoveDraftDoc = (id: string) => {
+    setDraftDocs((prev) => prev.filter((d) => d.id !== id));
   };
 
   const handleSaveEmployee = async () => {
     if (!name.trim()) return;
-    const selectedDepartment = dept || (departments.length > 0 ? departments[0].name : "General");
     const selectedLocation = location || (branches.length > 0 ? branches[0].name : "Global Headquarters");
 
     if (editingEmp) {
       await updateEmployee(editingEmp.id, {
         employee_code: code.trim() || editingEmp.employee_code,
         full_name: name.trim(),
-        department_name: selectedDepartment,
         location: selectedLocation,
         email: email.trim(),
         phone: phone.trim(),
@@ -68,10 +133,9 @@ export default function EmployeesPage() {
       });
     } else {
       const generatedCode = code.trim() || `NEX-${Math.floor(1000 + Math.random() * 9000)}`;
-      await addEmployee({
+      const created = await addEmployee({
         employee_code: generatedCode,
         full_name: name.trim(),
-        department_name: selectedDepartment,
         location: selectedLocation,
         email: email.trim(),
         phone: phone.trim(),
@@ -79,18 +143,49 @@ export default function EmployeesPage() {
         status: "active",
         avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150`,
       });
+
+      // Prepare all draft documents + any active un-submitted doc input
+      const docsToSave = [...draftDocs];
+      if (attachDocument && docExpiryDate.trim()) {
+        docsToSave.push({
+          id: `draft-pending`,
+          document_type_name: docType || (documentTypes[0]?.name || "Work Visa"),
+          document_number: docNumber.trim() || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+          expiry_date: docExpiryDate.trim(),
+          issuing_country: docIssuingCountry.trim() || "UAE",
+        });
+      }
+
+      if (created && created.id && docsToSave.length > 0) {
+        for (const d of docsToSave) {
+          const supabaseDate = formatSupabaseDate(d.expiry_date);
+          const today = new Date();
+          const exp = new Date(supabaseDate);
+          const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const status = diffDays < 0 ? "expired" : diffDays <= 90 ? "expiring_soon" : "valid";
+
+          await addDocument({
+            employee_id: created.id,
+            document_type_name: d.document_type_name,
+            document_number: d.document_number,
+            issuing_country: d.issuing_country,
+            expiry_date: supabaseDate,
+            status,
+          });
+        }
+      }
     }
 
     setShowModal(false);
   };
 
-  // Filtering
+  // Filtering by Search & Branch
   const filteredEmployees = employees.filter((emp) => {
     const matchesSearch =
       emp.full_name.toLowerCase().includes(search.toLowerCase()) ||
       emp.employee_code.toLowerCase().includes(search.toLowerCase());
-    const matchesDept = selectedDept === "all" || emp.department_name === selectedDept;
-    return matchesSearch && matchesDept;
+    const matchesBranch = selectedBranch === "all" || emp.location === selectedBranch;
+    return matchesSearch && matchesBranch;
   });
 
   const getDocStatusBadge = (emp: Employee) => {
@@ -122,8 +217,8 @@ export default function EmployeesPage() {
       {showModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-on-surface/20 backdrop-blur-sm" />
-          <div className="relative glass-modal rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
+          <div className="relative glass-modal rounded-2xl w-full max-w-[540px] p-6 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto hide-scrollbar" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
               <h3 className={cn(typography.heading.h2, "text-on-surface")}>
                 {editingEmp ? "Edit Employee" : "Add New Employee"}
               </h3>
@@ -134,57 +229,144 @@ export default function EmployeesPage() {
 
             <div className="space-y-3">
               <div>
-                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Full Name *</label>
+                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Full Name *</label>
                 <input className={inputCls} placeholder="e.g. Sarah Jenkins" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Employee Code</label>
+                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Employee Code</label>
                   <input className={inputCls} placeholder="e.g. NEX-5012" value={code} onChange={(e) => setCode(e.target.value)} />
                 </div>
                 <div>
-                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Department</label>
-                  <select className={inputCls} value={dept || (departments[0]?.name || "")} onChange={(e) => setDept(e.target.value)}>
-                    {departments.length === 0 ? (
-                      <option value="">General</option>
+                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Location (Branch)</label>
+                  <select className={inputCls} value={location || (branches[0]?.name || "")} onChange={(e) => setLocation(e.target.value)}>
+                    {branches.length === 0 ? (
+                      <option value="Global Headquarters">Global Headquarters</option>
                     ) : (
-                      departments.map((d) => (
-                        <option key={d.id} value={d.name}>
-                          {d.name}
+                      branches.map((b) => (
+                        <option key={b.id} value={b.name}>
+                          {b.name} {b.subtitle ? `(${b.subtitle})` : ""}
                         </option>
                       ))
                     )}
                   </select>
                 </div>
               </div>
-              <div>
-                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Location (Branch)</label>
-                <select className={inputCls} value={location || (branches[0]?.name || "")} onChange={(e) => setLocation(e.target.value)}>
-                  {branches.length === 0 ? (
-                    <option value="Global Headquarters">Global Headquarters</option>
-                  ) : (
-                    branches.map((b) => (
-                      <option key={b.id} value={b.name}>
-                        {b.name} {b.subtitle ? `(${b.subtitle})` : ""}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Email</label>
+                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Email</label>
                   <input className={inputCls} placeholder="sarah.j@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div>
-                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Phone</label>
+                  <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Phone</label>
                   <input className={inputCls} placeholder="+971 50 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </div>
               </div>
               <div>
-                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1")}>Position</label>
+                <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Position</label>
                 <input className={inputCls} placeholder="e.g. Senior Specialist" value={position} onChange={(e) => setPosition(e.target.value)} />
               </div>
+
+              {/* Attach Initial Documents Section (Multiple Document Upload Support) */}
+              {!editingEmp && (
+                <div className="pt-3 border-t border-outline-variant/20">
+                  <div className="flex items-center justify-between cursor-pointer mb-2 bg-surface-container/40 p-3 rounded-xl border border-outline-variant/30 hover:bg-surface-container/60 transition-colors" onClick={() => setAttachDocument(!attachDocument)}>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-[20px]">note_add</span>
+                      <div>
+                        <p className={cn(typography.label.md, "font-bold text-on-surface")}>
+                          Upload Documents ({draftDocs.length})
+                        </p>
+                        <p className={cn(typography.caption.sm, "text-on-surface-variant")}>Attach multiple documents (Visa, Passport, IDs)</p>
+                      </div>
+                    </div>
+                    <input type="checkbox" checked={attachDocument} onChange={(e) => setAttachDocument(e.target.checked)} className="w-4 h-4 accent-primary cursor-pointer" />
+                  </div>
+
+                  {attachDocument && (
+                    <div className="space-y-3 bg-surface-container/30 p-4 rounded-xl border border-outline-variant/30 animate-in fade-in duration-200">
+                      {/* Attached Documents List */}
+                      {draftDocs.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          <label className={cn(typography.label.md, "block text-on-surface-variant uppercase font-bold")}>Attached ({draftDocs.length})</label>
+                          <div className="flex flex-wrap gap-2">
+                            {draftDocs.map((d) => (
+                              <div key={d.id} className="flex items-center gap-2 px-3 py-1.5 bg-white/70 border border-primary/20 rounded-xl text-xs shadow-sm">
+                                <span className="material-symbols-outlined text-[16px] text-primary">description</span>
+                                <span className="font-bold text-on-surface">{d.document_type_name}</span>
+                                <span className="text-on-surface-variant font-mono">({d.document_number})</span>
+                                <span className="text-primary font-medium">Exp: {d.expiry_date}</span>
+                                <button type="button" onClick={() => handleRemoveDraftDoc(d.id)} className="text-error hover:opacity-80 ml-1">
+                                  <span className="material-symbols-outlined text-[14px]">close</span>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Document Type</label>
+                          <select className={inputCls} value={docType} onChange={(e) => setDocType(e.target.value)}>
+                            {documentTypes.length === 0 ? (
+                              <>
+                                <option>Work Visa</option>
+                                <option>Passport</option>
+                                <option>Emirates ID</option>
+                                <option>Labour Card</option>
+                                <option>Insurance Card</option>
+                              </>
+                            ) : (
+                              documentTypes.map((dt) => (
+                                <option key={dt.id} value={dt.name}>
+                                  {dt.name}
+                                </option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Document Number</label>
+                          <input className={inputCls} placeholder="e.g. V-98234" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Expiry Date *</label>
+                          <div className="relative flex items-center">
+                            <input
+                              className={cn(inputCls, "pr-10")}
+                              placeholder="dd/mm/yy"
+                              maxLength={8}
+                              value={docExpiryDate}
+                              onChange={handleDateInputChange}
+                            />
+                            <label className="absolute right-3 cursor-pointer text-primary hover:opacity-80 flex items-center" title="Select date">
+                              <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                              <input type="date" className="sr-only" onChange={handleNativePickerChange} />
+                            </label>
+                          </div>
+                        </div>
+                        <div>
+                          <label className={cn(typography.label.md, "block text-on-surface-variant uppercase mb-1 font-bold")}>Issuing Country</label>
+                          <input className={inputCls} placeholder="e.g. UAE" value={docIssuingCountry} onChange={(e) => setDocIssuingCountry(e.target.value)} />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleAddDraftDoc}
+                        className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                        <span>Add Document To List</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -198,6 +380,8 @@ export default function EmployeesPage() {
           </div>
         </div>
       )}
+
+
 
       {/* Background Aura */}
       <div className="aura-glow">
@@ -244,13 +428,13 @@ export default function EmployeesPage() {
 
             <select
               className={cn(typography.button.md, "bg-white/40 px-4 py-2 rounded-full border border-white/40 cursor-pointer outline-none")}
-              value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
             >
-              <option value="all">All Departments</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.name}>
-                  {d.name}
+              <option value="all">All Branches</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.name}>
+                  {b.name}
                 </option>
               ))}
             </select>
@@ -262,7 +446,7 @@ export default function EmployeesPage() {
               <thead>
                 <tr className="bg-primary/5">
                   <th className={cn(typography.label.md, "px-6 py-4 text-on-surface-variant uppercase tracking-widest")}>Employee</th>
-                  <th className={cn(typography.label.md, "px-6 py-4 text-on-surface-variant uppercase tracking-widest")}>Department</th>
+                  <th className={cn(typography.label.md, "px-6 py-4 text-on-surface-variant uppercase tracking-widest")}>Branch / Location</th>
                   <th className={cn(typography.label.md, "px-6 py-4 text-on-surface-variant uppercase tracking-widest")}>Documents</th>
                   <th className={cn(typography.label.md, "px-6 py-4 text-on-surface-variant uppercase tracking-widest")}>Expiry Status</th>
                   <th className={cn(typography.label.md, "px-6 py-4 text-on-surface-variant uppercase tracking-widest text-right")}>Actions</th>
@@ -295,8 +479,8 @@ export default function EmployeesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className={cn(typography.body.lg, "font-semibold text-on-background")}>{emp.department_name || "General"}</span>
-                        <span className={cn(typography.body.md, "text-on-surface-variant")}>{emp.location || "Global Headquarters"}</span>
+                        <span className={cn(typography.body.lg, "font-semibold text-on-background")}>{emp.location || "Global Headquarters"}</span>
+                        {emp.position && <span className={cn(typography.caption.md, "text-on-surface-variant")}>{emp.position}</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4">

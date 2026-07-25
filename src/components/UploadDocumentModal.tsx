@@ -1,20 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/cn';
 import { typography } from '@/config/typography';
 import { useEmployees, useConfig, useDocuments } from '@/backend/useHooks';
+import { DocumentItem } from '@/backend/data-types/models';
 import { formatSupabaseDate, formatDisplayDate } from '@/lib/dateUtils';
 
 interface UploadDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingDocument?: DocumentItem | null;
 }
 
-export default function UploadDocumentModal({ isOpen, onClose }: UploadDocumentModalProps) {
+export default function UploadDocumentModal({ isOpen, onClose, editingDocument }: UploadDocumentModalProps) {
   const { employees } = useEmployees();
   const { documentTypes } = useConfig();
-  const { addDocument } = useDocuments();
+  const { addDocument, updateDocument } = useDocuments();
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [documentTypeName, setDocumentTypeName] = useState('');
@@ -23,6 +25,25 @@ export default function UploadDocumentModal({ isOpen, onClose }: UploadDocumentM
   const [issuingCountry, setIssuingCountry] = useState('UAE');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (editingDocument) {
+      setSelectedEmployeeId(editingDocument.employee_id || (employees[0]?.id || ''));
+      setDocumentTypeName(editingDocument.document_type_name || (documentTypes[0]?.name || 'Work Visa'));
+      setDocumentNumber(editingDocument.document_number || '');
+      setExpiryDate(editingDocument.expiry_date ? formatDisplayDate(editingDocument.expiry_date, true) : '');
+      setIssuingCountry(editingDocument.issuing_country || 'UAE');
+      setNotes(editingDocument.notes || '');
+    } else {
+      setSelectedEmployeeId(employees[0]?.id || '');
+      setDocumentTypeName(documentTypes[0]?.name || 'Work Visa');
+      setDocumentNumber('');
+      setExpiryDate('');
+      setIssuingCountry('UAE');
+      setNotes('');
+    }
+  }, [editingDocument, isOpen, employees, documentTypes]);
 
   if (!isOpen) return null;
 
@@ -72,24 +93,31 @@ export default function UploadDocumentModal({ isOpen, onClose }: UploadDocumentM
 
     setSubmitting(true);
     try {
-      await addDocument({
-        employee_id: empId,
-        document_type_name: docType,
-        document_number: documentNumber || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
-        issuing_country: issuingCountry,
-        expiry_date: supabaseFormattedDate,
-        status,
-        notes,
-      });
+      if (editingDocument) {
+        await updateDocument(editingDocument.id, {
+          employee_id: empId,
+          document_type_name: docType,
+          document_number: documentNumber || editingDocument.document_number,
+          issuing_country: issuingCountry,
+          expiry_date: supabaseFormattedDate,
+          status,
+          notes,
+        });
+      } else {
+        await addDocument({
+          employee_id: empId,
+          document_type_name: docType,
+          document_number: documentNumber || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+          issuing_country: issuingCountry,
+          expiry_date: supabaseFormattedDate,
+          status,
+          notes,
+        });
+      }
 
-      setSelectedEmployeeId('');
-      setDocumentTypeName('');
-      setDocumentNumber('');
-      setExpiryDate('');
-      setNotes('');
       onClose();
     } catch (err) {
-      console.error('Failed to upload document:', err);
+      console.error('Failed to save document:', err);
     } finally {
       setSubmitting(false);
     }
@@ -105,8 +133,12 @@ export default function UploadDocumentModal({ isOpen, onClose }: UploadDocumentM
         {/* Modal Header */}
         <div className="px-5 py-4 sm:px-8 sm:py-6 border-b border-white/30 flex justify-between items-center shrink-0 bg-white/40 backdrop-blur-md">
           <div>
-            <h3 className={cn(typography.heading.h2, "sm:text-2xl text-primary tracking-tight font-bold")}>Upload Document</h3>
-            <p className={cn(typography.caption.md, "sm:text-sm text-on-surface-variant")}>Assign a new document to an employee profile</p>
+            <h3 className={cn(typography.heading.h2, "sm:text-2xl text-primary tracking-tight font-bold")}>
+              {editingDocument ? 'Edit Document' : 'Upload Document'}
+            </h3>
+            <p className={cn(typography.caption.md, "sm:text-sm text-on-surface-variant")}>
+              {editingDocument ? 'Update document details and expiry date' : 'Assign a new document to an employee profile'}
+            </p>
           </div>
           <button 
             className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-white/40 transition-colors text-on-surface-variant shrink-0" 
@@ -253,7 +285,7 @@ export default function UploadDocumentModal({ isOpen, onClose }: UploadDocumentM
             disabled={submitting}
             className={cn(typography.button.md, "w-full sm:w-auto px-8 py-2.5 sm:py-3 bg-primary text-on-primary rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50")}
           >
-            <span>{submitting ? "Saving..." : "Save Document"}</span>
+            <span>{submitting ? "Saving..." : editingDocument ? "Update Document" : "Save Document"}</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
         </div>

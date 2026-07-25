@@ -7,6 +7,7 @@ import UploadDocumentModal from "@/components/UploadDocumentModal";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
 import { useDocuments, useEmployees, useConfig, getSmartDocumentIcon } from "@/backend/useHooks";
+import { DocumentItem } from "@/backend/data-types/models";
 import { formatDisplayDate } from "@/lib/dateUtils";
 
 export default function MobileDocumentsPage() {
@@ -17,6 +18,17 @@ export default function MobileDocumentsPage() {
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState("All");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
+
+  const openNewModal = () => {
+    setEditingDoc(null);
+    setIsUploadModalOpen(true);
+  };
+
+  const openEditModal = (doc: DocumentItem) => {
+    setEditingDoc(doc);
+    setIsUploadModalOpen(true);
+  };
 
   const getEmployeeName = (empId: string) => {
     const found = employees.find((e) => e.id === empId);
@@ -151,19 +163,29 @@ export default function MobileDocumentsPage() {
               </div>
             ) : (
               filteredDocuments.map((doc) => (
-                <div key={doc.id} className="glass-panel-heavy p-card-padding rounded-lg shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
+                <div key={doc.id} className="glass-panel-heavy p-card-padding rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                   <div className="flex justify-between items-start mb-4">
                     <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container">
                       <span className="material-symbols-outlined">{getDocIcon(doc.document_type_name)}</span>
                     </div>
                     <div className="flex flex-col items-end">
                       {getStatusBadge(doc.status)}
-                      <button
-                        onClick={() => deleteDocument(doc.id)}
-                        className="p-1 text-on-surface-variant hover:text-error transition-colors mt-1"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => openEditModal(doc)}
+                          className="p-1 text-on-surface-variant hover:text-primary transition-colors"
+                          title="Edit Document"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button
+                          onClick={() => deleteDocument(doc.id)}
+                          className="p-1 text-on-surface-variant hover:text-error transition-colors"
+                          title="Delete Document"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="mb-4">
@@ -188,7 +210,7 @@ export default function MobileDocumentsPage() {
 
         {/* FAB for upload */}
         <button
-          onClick={() => setIsUploadModalOpen(true)}
+          onClick={openNewModal}
           className="fixed bottom-32 right-6 w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-primary-container text-white flex items-center justify-center fab-glow active:scale-90 transition-transform z-[110] animate-float"
         >
           <span className="material-symbols-outlined text-[28px]">add</span>
@@ -197,6 +219,7 @@ export default function MobileDocumentsPage() {
         <UploadDocumentModal
           isOpen={isUploadModalOpen}
           onClose={() => setIsUploadModalOpen(false)}
+          editingDocument={editingDoc}
         />
 
         <MobileBottomNavBar />
@@ -204,3 +227,4 @@ export default function MobileDocumentsPage() {
     </div>
   );
 }
+
