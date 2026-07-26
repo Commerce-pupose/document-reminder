@@ -22,9 +22,15 @@ export const pushService = {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       return false;
     }
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-    return !!subscription;
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) return false;
+      const subscription = await registration.pushManager.getSubscription();
+      return !!subscription;
+    } catch (err) {
+      console.error("Error checking push subscription:", err);
+      return false;
+    }
   },
 
   async subscribeUser() {
@@ -40,7 +46,18 @@ export const pushService = {
       throw new Error('Permission for notifications was not granted.');
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    let registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
+      // Fallback to ready with a timeout if it's currently installing
+      const readyPromise = navigator.serviceWorker.ready;
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker registration timed out')), 5000));
+      registration = await Promise.race([readyPromise, timeoutPromise]) as ServiceWorkerRegistration;
+    }
+    
+    if (!registration) {
+      throw new Error('Service Worker is not active yet. Please reload the page.');
+    }
+
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     
     if (!vapidPublicKey) {
