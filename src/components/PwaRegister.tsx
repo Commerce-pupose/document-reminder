@@ -5,7 +5,7 @@ import { useEffect } from "react";
 export default function PwaRegister() {
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
+      const registerSW = async () => {
         // Unregister stale service workers (old hr-portal cache) so the new
         // 'reminder-app-v2' cache activates and serves the updated manifest.
         const registrations = await navigator.serviceWorker.getRegistrations();
@@ -40,7 +40,13 @@ export default function PwaRegister() {
           .catch((error) => {
             console.error("[PWA] ServiceWorker registration failed:", error);
           });
-      });
+      };
+
+      if (document.readyState === "complete") {
+        registerSW();
+      } else {
+        window.addEventListener("load", registerSW);
+      }
     }
   }, []);
 
