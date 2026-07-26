@@ -4,7 +4,7 @@
  * - Supabase standard storage format: YYYY-MM-DD
  */
 
-export function formatDisplayDate(dateInput: string | Date | null | undefined, shortYear: boolean = true): string {
+export function formatDisplayDate(dateInput: string | Date | null | undefined, shortYear: boolean = false): string {
   if (!dateInput) return 'N/A';
   
   const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;

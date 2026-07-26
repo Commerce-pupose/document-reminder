@@ -78,9 +78,9 @@ export default function MobileEmployeesPage() {
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
-    const digits = val.replace(/\D/g, "").slice(0, 6);
+    const digits = val.replace(/\D/g, "").slice(0, 8);
     if (digits.length >= 5) {
-      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 6)}`;
+      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
     } else if (digits.length >= 3) {
       val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
     } else {
@@ -91,13 +91,13 @@ export default function MobileEmployeesPage() {
 
   const handleNativePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
-      setDocExpiryDate(formatDisplayDate(e.target.value, true));
+      setDocExpiryDate(formatDisplayDate(e.target.value, false));
     }
   };
 
   const handleAddDraftDoc = () => {
     if (!docExpiryDate.trim()) {
-      alert("Please enter an expiry date (dd/mm/yy).");
+      alert("Please enter an expiry date (dd/mm/yyyy).");
       return;
     }
     const newDoc: DraftDocument = {
@@ -392,8 +392,8 @@ export default function MobileEmployeesPage() {
                         <div className="relative flex items-center">
                           <input
                             className="w-full bg-white/60 border border-outline-variant/30 rounded-xl px-3 py-2 pr-10 text-sm outline-none focus:border-primary"
-                            placeholder="dd/mm/yy"
-                            maxLength={8}
+                            placeholder="dd/mm/yyyy"
+                            maxLength={10}
                             value={docExpiryDate}
                             onChange={handleDateInputChange}
                           />

@@ -5,6 +5,7 @@ import MobileBottomNavBar from "../components/MobileBottomNavBar";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
 import { useSettings, useAuth } from "@/backend/useHooks";
+import { pushService } from "@/backend/supabase/services/pushService";
 
 export default function MobileSettingsPage() {
   const { settings, isLive, updateSettings } = useSettings();
@@ -17,6 +18,12 @@ export default function MobileSettingsPage() {
   const [dateFormat, setDateFormat] = useState("DD/MM/YY");
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  useEffect(() => {
+    pushService.isSubscribed().then(setPushEnabled).catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (settings) {
@@ -44,6 +51,43 @@ export default function MobileSettingsPage() {
       console.error("Failed to save settings:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTogglePush = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setPushLoading(true);
+    try {
+      if (checked) {
+        await pushService.subscribeUser();
+        setPushEnabled(true);
+      } else {
+        await pushService.unsubscribeUser();
+        setPushEnabled(false);
+      }
+    } catch (error: any) {
+      console.error("Failed to toggle push notifications:", error);
+      alert(error.message);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    try {
+      const res = await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Test Notification 🚀',
+          message: 'If you see this, in-app push notifications are working perfectly!',
+          url: '/'
+        })
+      });
+      if (!res.ok) throw new Error('Failed to send test push');
+    } catch (err) {
+      console.error(err);
+      alert("Error sending test notification");
     }
   };
 
@@ -134,6 +178,33 @@ export default function MobileSettingsPage() {
                   />
                   <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
                 </label>
+              </div>
+              
+              <div className="flex items-center justify-between pt-3 border-t border-white/30">
+                <div>
+                  <span className={cn(typography.body.md, "font-semibold text-on-surface block")}>Push Notifications</span>
+                  <span className={cn(typography.caption.sm, "text-on-surface-variant")}>Browser alerts on this device</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  {pushEnabled && (
+                    <button
+                      onClick={handleTestPush}
+                      className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg hover:bg-primary/20 transition-colors"
+                    >
+                      Test
+                    </button>
+                  )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pushEnabled}
+                      onChange={handleTogglePush}
+                      disabled={pushLoading}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-sm"></div>
+                  </label>
+                </div>
               </div>
             </div>
           </div>

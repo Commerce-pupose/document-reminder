@@ -32,7 +32,7 @@ export default function UploadDocumentModal({ isOpen, onClose, editingDocument }
       setSelectedEmployeeId(editingDocument.employee_id || (employees[0]?.id || ''));
       setDocumentTypeName(editingDocument.document_type_name || (documentTypes[0]?.name || 'Work Visa'));
       setDocumentNumber(editingDocument.document_number || '');
-      setExpiryDate(editingDocument.expiry_date ? formatDisplayDate(editingDocument.expiry_date, true) : '');
+      setExpiryDate(editingDocument.expiry_date ? formatDisplayDate(editingDocument.expiry_date, false) : '');
       setIssuingCountry(editingDocument.issuing_country || 'UAE');
       setNotes(editingDocument.notes || '');
     } else {
@@ -49,10 +49,10 @@ export default function UploadDocumentModal({ isOpen, onClose, editingDocument }
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
-    // Auto-mask digits to dd/mm/yy
-    const digits = val.replace(/\D/g, '').slice(0, 6);
+    // Auto-mask digits to dd/mm/yyyy
+    const digits = val.replace(/\D/g, '').slice(0, 8);
     if (digits.length >= 5) {
-      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 6)}`;
+      val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
     } else if (digits.length >= 3) {
       val = `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
     } else {
@@ -63,13 +63,13 @@ export default function UploadDocumentModal({ isOpen, onClose, editingDocument }
 
   const handleNativePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
-      setExpiryDate(formatDisplayDate(e.target.value, true));
+      setExpiryDate(formatDisplayDate(e.target.value, false));
     }
   };
 
   const handleProcessUpload = async () => {
     if (!expiryDate) {
-      alert('Please enter an expiry date (dd/mm/yy).');
+      alert('Please enter an expiry date (dd/mm/yyyy).');
       return;
     }
     const empId = selectedEmployeeId || (employees.length > 0 ? employees[0].id : 'unassigned');
@@ -229,9 +229,9 @@ export default function UploadDocumentModal({ isOpen, onClose, editingDocument }
                       typography.body.md,
                       "w-full px-3 py-2.5 sm:px-4 sm:py-3 pr-10 bg-white/60 border border-white/50 rounded-xl focus:ring-2 focus:ring-primary/50 transition-all outline-none text-sm placeholder:text-outline-variant/60"
                     )}
-                    placeholder="dd/mm/yy"
+                    placeholder="dd/mm/yyyy"
                     type="text"
-                    maxLength={8}
+                    maxLength={10}
                     value={expiryDate}
                     onChange={handleDateInputChange}
                   />
