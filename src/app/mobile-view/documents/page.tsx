@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -101,7 +101,7 @@ function MobileEmployeeDocCard({
 
       {/* Middle: avatar + name */}
       <div className="px-4 py-3 flex items-center gap-3 border-t border-b border-white/30">
-        {employee.avatar_url ? (
+        {employee.avatar_url && !employee.avatar_url.includes("unsplash.com") ? (
           <img
             src={employee.avatar_url}
             alt={employee.full_name}

@@ -80,10 +80,10 @@ export default function MobileDashboard() {
                 <div className="flex -space-x-2">
                   {employees.slice(0, 3).map((emp) => (
                     <div key={emp.id} className="w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-white shadow-sm overflow-hidden font-bold text-white text-xs">
-                      {emp.avatar_url ? (
+                      {emp.avatar_url && !emp.avatar_url.includes("unsplash.com") ? (
                         <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
                       ) : (
-                        emp.full_name.charAt(0)
+                        <span className="material-symbols-outlined text-[16px]">person</span>
                       )}
                     </div>
                   ))}
@@ -145,10 +145,10 @@ export default function MobileDashboard() {
                 return (
                   <div key={doc.id} className="bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white bg-primary/10 flex items-center justify-center font-bold text-primary">
-                      {emp?.avatar_url ? (
+                      {emp?.avatar_url && !emp.avatar_url.includes("unsplash.com") ? (
                         <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
                       ) : (
-                        (emp?.full_name || "E").charAt(0)
+                        <span className="material-symbols-outlined text-[24px]">person</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

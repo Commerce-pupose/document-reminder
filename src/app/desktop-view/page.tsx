@@ -64,10 +64,10 @@ export default function Dashboard() {
           <div className="mt-6 flex -space-x-3">
             {employees.slice(0, 4).map((emp, i) => (
               <div key={emp.id} className="w-8 h-8 rounded-full border-2 border-white overflow-hidden bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                {emp.avatar_url ? (
+                {emp.avatar_url && !emp.avatar_url.includes("unsplash.com") ? (
                   <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
                 ) : (
-                  emp.full_name.charAt(0)
+                  <span className="material-symbols-outlined text-[16px]">person</span>
                 )}
               </div>
             ))}
@@ -177,10 +177,10 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-xl bg-surface-container overflow-hidden shrink-0 flex items-center justify-center font-bold text-primary">
-                      {emp?.avatar_url ? (
+                      {emp?.avatar_url && !emp.avatar_url.includes("unsplash.com") ? (
                         <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
                       ) : (
-                        (emp?.full_name || "E").charAt(0)
+                        <span className="material-symbols-outlined text-[20px]">person</span>
                       )}
                     </div>
                     <div className="min-w-0">

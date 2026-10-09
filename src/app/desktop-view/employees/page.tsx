@@ -1,11 +1,12 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/cn";
 import { typography } from "@/config/typography";
 import { useEmployees, useConfig, useDocuments, getSmartDocumentIcon } from "@/backend/useHooks";
 import { Employee } from "@/backend/data-types/models";
 import { formatSupabaseDate, formatDisplayDate } from "@/lib/dateUtils";
+import { uploadAvatar } from "@/lib/uploadAvatar";
 
 interface DraftDocument {
   id: string;
@@ -17,6 +18,41 @@ interface DraftDocument {
 
 const inputCls =
   "w-full bg-surface-container/50 border border-outline-variant/40 rounded-xl px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all";
+
+/** Reusable avatar display: shows photo if present, else person icon */
+function AvatarDisplay({
+  url,
+  name,
+  size = "md",
+}: {
+  url?: string | null;
+  name: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const dim =
+    size === "sm"
+      ? "w-8 h-8"
+      : size === "lg"
+      ? "w-16 h-16"
+      : "w-10 h-10";
+  const iconSize =
+    size === "sm" ? "text-[16px]" : size === "lg" ? "text-[32px]" : "text-[20px]";
+
+  return (
+    <div
+      className={cn(
+        dim,
+        "rounded-full border-2 border-white shadow-sm overflow-hidden bg-primary/10 flex items-center justify-center text-primary shrink-0"
+      )}
+    >
+      {url ? (
+        <img className="w-full h-full object-cover" alt={name} src={url} />
+      ) : (
+        <span className={cn("material-symbols-outlined", iconSize)}>person</span>
+      )}
+    </div>
+  );
+}
 
 export default function EmployeesPage() {
   const { employees, isLive, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
@@ -36,13 +72,25 @@ export default function EmployeesPage() {
   const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
 
-  // Document upload state while adding employee (Multiple docs support)
+  // Avatar state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Document upload state
   const [attachDocument, setAttachDocument] = useState(false);
   const [draftDocs, setDraftDocs] = useState<DraftDocument[]>([]);
   const [docType, setDocType] = useState("");
   const [docNumber, setDocNumber] = useState("");
   const [docExpiryDate, setDocExpiryDate] = useState("");
   const [docIssuingCountry, setDocIssuingCountry] = useState("UAE");
+
+  const [saving, setSaving] = useState(false);
+
+  const resetAvatarState = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
 
   const openAddModal = () => {
     setEditingEmp(null);
@@ -52,15 +100,13 @@ export default function EmployeesPage() {
     setEmail("");
     setPhone("");
     setPosition("");
-
-    // Reset document fields and draft list
+    resetAvatarState();
     setAttachDocument(false);
     setDraftDocs([]);
     setDocType(documentTypes[0]?.name || "Work Visa");
     setDocNumber("");
     setDocExpiryDate("");
     setDocIssuingCountry("UAE");
-
     setShowModal(true);
   };
 
@@ -72,9 +118,21 @@ export default function EmployeesPage() {
     setEmail(emp.email || "");
     setPhone(emp.phone || "");
     setPosition(emp.position || "");
+    setAvatarFile(null);
+    // Show existing avatar as preview (if any), but not the old Unsplash URL
+    const existingUrl = emp.avatar_url;
+    const isOldDefault = existingUrl?.includes("unsplash.com");
+    setAvatarPreview(existingUrl && !isOldDefault ? existingUrl : null);
     setAttachDocument(false);
     setDraftDocs([]);
     setShowModal(true);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +167,6 @@ export default function EmployeesPage() {
       issuing_country: docIssuingCountry.trim() || "UAE",
     };
     setDraftDocs((prev) => [...prev, newDoc]);
-    // Reset inputs for next document
     setDocNumber("");
     setDocExpiryDate("");
   };
@@ -120,9 +177,19 @@ export default function EmployeesPage() {
 
   const handleSaveEmployee = async () => {
     if (!name.trim()) return;
+    setSaving(true);
     const selectedLocation = location || (branches.length > 0 ? branches[0].name : "Global Headquarters");
 
     if (editingEmp) {
+      // Upload new avatar if chosen
+      let newAvatarUrl: string | undefined = undefined;
+      if (avatarFile) {
+        newAvatarUrl = (await uploadAvatar(avatarFile, editingEmp.id)) ?? undefined;
+      } else if (avatarPreview === null) {
+        // User cleared the avatar — set to null (no photo)
+        newAvatarUrl = undefined;
+      }
+
       await updateEmployee(editingEmp.id, {
         employee_code: code.trim() || editingEmp.employee_code,
         full_name: name.trim(),
@@ -130,8 +197,19 @@ export default function EmployeesPage() {
         email: email.trim(),
         phone: phone.trim(),
         position: position.trim(),
+        ...(newAvatarUrl !== undefined ? { avatar_url: newAvatarUrl } : {}),
+        // Clear old unsplash default if no new avatar provided
+        ...(avatarFile === null && editingEmp.avatar_url?.includes("unsplash.com")
+          ? { avatar_url: undefined }
+          : {}),
       });
     } else {
+      // Upload avatar for new employee (temp ID, will be updated after creation)
+      let avatarUrl: string | undefined = undefined;
+      if (avatarFile) {
+        avatarUrl = (await uploadAvatar(avatarFile)) ?? undefined;
+      }
+
       const generatedCode = code.trim() || `NEX-${Math.floor(1000 + Math.random() * 9000)}`;
       const created = await addEmployee({
         employee_code: generatedCode,
@@ -141,10 +219,10 @@ export default function EmployeesPage() {
         phone: phone.trim(),
         position: position.trim() || "Team Member",
         status: "active",
-        avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150`,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       });
 
-      // Prepare all draft documents + any active un-submitted doc input
+      // Prepare documents
       const docsToSave = [...draftDocs];
       if (attachDocument && docExpiryDate.trim()) {
         docsToSave.push({
@@ -176,10 +254,10 @@ export default function EmployeesPage() {
       }
     }
 
+    setSaving(false);
     setShowModal(false);
   };
 
-  // Filtering by Search & Branch
   const filteredEmployees = employees.filter((emp) => {
     const matchesSearch =
       emp.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -217,7 +295,10 @@ export default function EmployeesPage() {
       {showModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-on-surface/20 backdrop-blur-sm" />
-          <div className="relative glass-modal rounded-2xl w-full max-w-[540px] p-6 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto hide-scrollbar" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative glass-modal rounded-2xl w-full max-w-[540px] p-6 space-y-4 shadow-2xl max-h-[88vh] overflow-y-auto hide-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
               <h3 className={cn(typography.heading.h2, "text-on-surface")}>
                 {editingEmp ? "Edit Employee" : "Add New Employee"}
@@ -225,6 +306,52 @@ export default function EmployeesPage() {
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-surface-container text-on-surface-variant">
                 <span className="material-symbols-outlined">close</span>
               </button>
+            </div>
+
+            {/* ── Avatar Picker ── */}
+            <div className="flex flex-col items-center gap-3 py-2">
+              <div className="relative group">
+                <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-primary/10 flex items-center justify-center text-primary">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[40px]">person</span>
+                  )}
+                </div>
+                {/* Overlay edit button */}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <span className="material-symbols-outlined text-white text-[22px]">photo_camera</span>
+                </button>
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-semibold hover:bg-primary/20 transition-colors"
+                >
+                  {avatarPreview ? "Change Photo" : "Upload Photo"}
+                </button>
+                {avatarPreview && (
+                  <button
+                    type="button"
+                    onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
+                    className="text-xs px-3 py-1.5 rounded-full bg-error/10 text-error border border-error/20 font-semibold hover:bg-error/20 transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -267,10 +394,13 @@ export default function EmployeesPage() {
                 <input className={inputCls} placeholder="e.g. Senior Specialist" value={position} onChange={(e) => setPosition(e.target.value)} />
               </div>
 
-              {/* Attach Initial Documents Section (Multiple Document Upload Support) */}
+              {/* Attach Initial Documents Section */}
               {!editingEmp && (
                 <div className="pt-3 border-t border-outline-variant/20">
-                  <div className="flex items-center justify-between cursor-pointer mb-2 bg-surface-container/40 p-3 rounded-xl border border-outline-variant/30 hover:bg-surface-container/60 transition-colors" onClick={() => setAttachDocument(!attachDocument)}>
+                  <div
+                    className="flex items-center justify-between cursor-pointer mb-2 bg-surface-container/40 p-3 rounded-xl border border-outline-variant/30 hover:bg-surface-container/60 transition-colors"
+                    onClick={() => setAttachDocument(!attachDocument)}
+                  >
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-[20px]">note_add</span>
                       <div>
@@ -285,7 +415,6 @@ export default function EmployeesPage() {
 
                   {attachDocument && (
                     <div className="space-y-3 bg-surface-container/30 p-4 rounded-xl border border-outline-variant/30 animate-in fade-in duration-200">
-                      {/* Attached Documents List */}
                       {draftDocs.length > 0 && (
                         <div className="space-y-2 mb-3">
                           <label className={cn(typography.label.md, "block text-on-surface-variant uppercase font-bold")}>Attached ({draftDocs.length})</label>
@@ -319,9 +448,7 @@ export default function EmployeesPage() {
                               </>
                             ) : (
                               documentTypes.map((dt) => (
-                                <option key={dt.id} value={dt.name}>
-                                  {dt.name}
-                                </option>
+                                <option key={dt.id} value={dt.name}>{dt.name}</option>
                               ))
                             )}
                           </select>
@@ -373,15 +500,17 @@ export default function EmployeesPage() {
               <button onClick={() => setShowModal(false)} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl border border-outline-variant/40 text-on-surface-variant")}>
                 Cancel
               </button>
-              <button onClick={handleSaveEmployee} className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl bg-primary text-white shadow-lg")}>
-                {editingEmp ? "Update Employee" : "Save Employee"}
+              <button
+                onClick={handleSaveEmployee}
+                disabled={saving}
+                className={cn(typography.button.md, "flex-1 py-2.5 rounded-xl bg-primary text-white shadow-lg disabled:opacity-60")}
+              >
+                {saving ? "Saving..." : editingEmp ? "Update Employee" : "Save Employee"}
               </button>
             </div>
           </div>
         </div>
       )}
-
-
 
       {/* Background Aura */}
       <div className="aura-glow">
@@ -390,17 +519,14 @@ export default function EmployeesPage() {
         <div className="aura-circle bg-secondary-container w-[300px] h-[300px] top-[40%] left-[20%]"></div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="p-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
-        {/* Dashboard Header */}
         <div className="flex justify-between items-end">
           <div>
             <h2 className={cn(typography.heading.h1, "text-on-background")}>Employees</h2>
             <div className="flex items-center gap-2 mt-1">
               <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-primary animate-pulse"}`}></span>
-              <p className={cn(typography.body.md, "text-on-surface-variant")}>
-                {employees.length} active team members
-              </p>
+              <p className={cn(typography.body.md, "text-on-surface-variant")}>{employees.length} active team members</p>
             </div>
           </div>
           <button
@@ -412,9 +538,8 @@ export default function EmployeesPage() {
           </button>
         </div>
 
-        {/* Main Glass Container */}
         <div className="glass-card rounded-xl overflow-hidden flex flex-col border border-white/40">
-          {/* Filters Row */}
+          {/* Filters */}
           <div className="p-6 border-b border-white/20 flex flex-wrap items-center gap-4">
             <div className="relative min-w-[240px]">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
@@ -425,7 +550,6 @@ export default function EmployeesPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-
             <select
               className={cn(typography.button.md, "bg-white/40 px-4 py-2 rounded-full border border-white/40 cursor-pointer outline-none")}
               value={selectedBranch}
@@ -433,9 +557,7 @@ export default function EmployeesPage() {
             >
               <option value="all">All Branches</option>
               {branches.map((b) => (
-                <option key={b.id} value={b.name}>
-                  {b.name}
-                </option>
+                <option key={b.id} value={b.name}>{b.name}</option>
               ))}
             </select>
           </div>
@@ -455,81 +577,66 @@ export default function EmployeesPage() {
               <tbody className="divide-y divide-white/10">
                 {filteredEmployees.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-on-surface-variant">
-                      No employees found.
-                    </td>
+                    <td colSpan={5} className="px-6 py-8 text-center text-on-surface-variant">No employees found.</td>
                   </tr>
                 )}
-                {filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-white/30 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-surface-container flex items-center justify-center font-bold text-primary">
-                          {emp.avatar_url ? (
-                            <img className="w-full h-full object-cover" alt={emp.full_name} src={emp.avatar_url} />
+                {filteredEmployees.map((emp) => {
+                  const isOldDefault = emp.avatar_url?.includes("unsplash.com");
+                  const avatarUrl = isOldDefault ? undefined : emp.avatar_url;
+                  return (
+                    <tr key={emp.id} className="hover:bg-white/30 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <AvatarDisplay url={avatarUrl} name={emp.full_name} size="md" />
+                          <div>
+                            <p className={cn(typography.heading.h3, "text-on-background")}>{emp.full_name}</p>
+                            <p className={cn(typography.body.md, "text-on-surface-variant")}>ID: {emp.employee_code}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className={cn(typography.body.lg, "font-semibold text-on-background")}>{emp.location || "Global Headquarters"}</span>
+                          {emp.position && <span className={cn(typography.caption.md, "text-on-surface-variant")}>{emp.position}</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          {(!emp.documents || emp.documents.length === 0) ? (
+                            <span className={cn(typography.caption.sm, "text-on-surface-variant italic")}>No documents</span>
                           ) : (
-                            emp.full_name.charAt(0)
+                            emp.documents.map((doc) => (
+                              <div key={doc.id} className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/40 border border-white/60 text-xs shadow-sm hover:shadow-md transition-shadow">
+                                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                  <span className="material-symbols-outlined text-[14px]">{getSmartDocumentIcon(doc.document_type_name)}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-on-surface leading-tight truncate max-w-[120px]">{doc.document_type_name}</span>
+                                  <span className="text-on-surface-variant text-[10px] leading-tight">Exp: {formatDisplayDate(doc.expiry_date)}</span>
+                                </div>
+                              </div>
+                            ))
                           )}
                         </div>
-                        <div>
-                          <p className={cn(typography.heading.h3, "text-on-background")}>{emp.full_name}</p>
-                          <p className={cn(typography.body.md, "text-on-surface-variant")}>ID: {emp.employee_code}</p>
+                      </td>
+                      <td className="px-6 py-4">{getDocStatusBadge(emp)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => openEditModal(emp)} className="p-2 hover:bg-primary/10 rounded-full text-on-surface-variant hover:text-primary transition-all" title="Edit Employee">
+                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                          </button>
+                          <button onClick={() => deleteEmployee(emp.id)} className="p-2 hover:bg-error/10 rounded-full text-on-surface-variant hover:text-error transition-all" title="Delete Employee">
+                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className={cn(typography.body.lg, "font-semibold text-on-background")}>{emp.location || "Global Headquarters"}</span>
-                        {emp.position && <span className={cn(typography.caption.md, "text-on-surface-variant")}>{emp.position}</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {(!emp.documents || emp.documents.length === 0) ? (
-                          <span className={cn(typography.caption.sm, "text-on-surface-variant italic")}>No documents</span>
-                        ) : (
-                          emp.documents.map((doc) => (
-                            <div key={doc.id} className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/40 border border-white/60 text-xs shadow-sm hover:shadow-md transition-shadow">
-                              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                <span className="material-symbols-outlined text-[14px]">
-                                  {getSmartDocumentIcon(doc.document_type_name)}
-                                </span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-on-surface leading-tight truncate max-w-[120px]">{doc.document_type_name}</span>
-                                <span className="text-on-surface-variant text-[10px] leading-tight">Exp: {formatDisplayDate(doc.expiry_date)}</span>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{getDocStatusBadge(emp)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEditModal(emp)}
-                          className="p-2 hover:bg-primary/10 rounded-full text-on-surface-variant hover:text-primary transition-all"
-                          title="Edit Employee"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">edit</span>
-                        </button>
-                        <button
-                          onClick={() => deleteEmployee(emp.id)}
-                          className="p-2 hover:bg-error/10 rounded-full text-on-surface-variant hover:text-error transition-all"
-                          title="Delete Employee"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Footer Info */}
           <div className="p-6 border-t border-white/20 flex items-center justify-between">
             <p className={cn(typography.caption.md, "font-semibold text-on-surface-variant")}>
               Showing {filteredEmployees.length} of {employees.length} team members
