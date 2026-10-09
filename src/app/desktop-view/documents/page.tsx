@@ -1,23 +1,150 @@
-'use client';
+﻿'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import UploadDocumentModal from '@/components/UploadDocumentModal';
 import { cn } from '@/lib/cn';
 import { typography } from '@/config/typography';
-import { useDocuments, useEmployees, useConfig, getSmartDocumentIcon } from '@/backend/useHooks';
-import { DocumentItem } from '@/backend/data-types/models';
+import { useDocuments, useEmployees, useConfig } from '@/backend/useHooks';
+import { DocumentItem, Employee } from '@/backend/data-types/models';
 import { formatDisplayDate } from '@/lib/dateUtils';
+
+function worstStatus(docs: DocumentItem[]): string {
+  if (docs.some((d) => d.status === 'expired')) return 'expired';
+  if (docs.some((d) => d.status === 'expiring_soon')) return 'expiring_soon';
+  if (docs.some((d) => d.status === 'renewed')) return 'renewed';
+  return 'valid';
+}
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'expired')
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-[11px] font-bold tracking-wide uppercase">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+        Expired
+      </span>
+    );
+  if (status === 'expiring_soon')
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold tracking-wide uppercase">
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+        Expiring Soon
+      </span>
+    );
+  if (status === 'renewed')
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold tracking-wide uppercase">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+        Renewed
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold tracking-wide uppercase">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+      Active
+    </span>
+  );
+}
+
+function docDateColor(status: string) {
+  if (status === 'expired') return 'text-red-600 font-semibold';
+  if (status === 'expiring_soon') return 'text-orange-600 font-semibold';
+  return 'text-on-surface font-semibold';
+}
+
+function EmployeeDocCard({
+  employee,
+  docs,
+  onEdit,
+  onDelete,
+}: {
+  employee: Employee;
+  docs: DocumentItem[];
+  onEdit: (doc: DocumentItem) => void;
+  onDelete: (docId: string) => void;
+}) {
+  const status = worstStatus(docs);
+  const cols = Math.min(docs.length, 3);
+
+  return (
+    <div
+      className={cn(
+        'glass-panel-heavy rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl',
+        status === 'expired' && 'ring-1 ring-red-200',
+        status === 'expiring_soon' && 'ring-1 ring-orange-200',
+      )}
+    >
+      <div className="px-5 pt-4 pb-3 flex justify-between items-start gap-2">
+        <h4 className={cn(typography.heading.h3, 'text-on-surface font-extrabold tracking-tight leading-tight')}>
+          {employee.location || 'Global HQ'}
+        </h4>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <StatusBadge status={status} />
+          <button
+            onClick={() => docs[0] && onEdit(docs[0])}
+            className="p-1 text-on-surface-variant hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
+            title="Edit"
+          >
+            <span className="material-symbols-outlined text-[16px]">edit</span>
+          </button>
+          <button
+            onClick={() => docs.forEach((d) => onDelete(d.id))}
+            className="p-1 text-on-surface-variant hover:text-error rounded-full hover:bg-error/10 transition-colors"
+            title="Delete all"
+          >
+            <span className="material-symbols-outlined text-[16px]">delete</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="px-5 py-3 flex items-center gap-4 border-t border-b border-white/30">
+        {employee.avatar_url ? (
+          <img
+            src={employee.avatar_url}
+            alt={employee.full_name}
+            className="w-14 h-14 rounded-xl object-cover flex-shrink-0 shadow-sm ring-2 ring-white"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-white">
+            <span className="material-symbols-outlined text-[28px] text-primary">person</span>
+          </div>
+        )}
+        <p className={cn(typography.body.md, 'text-on-surface-variant')}>
+          Employee: <span className="font-bold text-on-surface">{employee.full_name}</span>
+        </p>
+      </div>
+
+      <div
+        className="px-5 py-4 grid gap-x-4 gap-y-3"
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      >
+        {docs.map((doc) => (
+          <button
+            key={doc.id}
+            onClick={() => onEdit(doc)}
+            className="flex flex-col gap-0.5 text-left hover:opacity-70 transition-opacity group"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/80 group-hover:text-primary transition-colors">
+              {doc.document_type_name}
+            </span>
+            <span className={cn('text-[13px]', docDateColor(doc.status))}>
+              {formatDisplayDate(doc.expiry_date)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function DocumentsPage() {
   const { documents, isLive, deleteDocument } = useDocuments();
   const { employees } = useEmployees();
-  const { documentTypes, branches } = useConfig();
+  const { branches } = useConfig();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [companyFilter, setCompanyFilter] = useState('all');
 
   const openNewDocModal = () => {
@@ -30,105 +157,72 @@ export default function DocumentsPage() {
     setIsUploadModalOpen(true);
   };
 
-  const getEmployee = (empId: string) => {
-    return employees.find((e) => e.id === empId);
-  };
+  const getEmployee = (empId: string) => employees.find((e) => e.id === empId);
 
-  const getEmployeeName = (empId: string) => {
-    const found = getEmployee(empId);
-    return found ? found.full_name : 'Team Member';
-  };
+  const grouped = useMemo(() => {
+    const map = new Map<string, { employee: Employee; docs: DocumentItem[] }>();
+    documents.forEach((doc) => {
+      const emp = getEmployee(doc.employee_id);
+      if (!emp) return;
 
-  const getEmployeeCompany = (empId: string) => {
-    const found = getEmployee(empId);
-    return found ? (found.location || 'Global Headquarters') : '';
-  };
+      const empCompany = emp.location || 'Global HQ';
+      const empName = emp.full_name.toLowerCase();
+      const docName = (doc.document_type_name || '').toLowerCase();
+      const docNum = (doc.document_number || '').toLowerCase();
+      const q = search.toLowerCase();
 
-  const getDocIcon = (docTypeName: string) => {
-    const found = documentTypes.find((dt) => dt.name.toLowerCase() === (docTypeName || '').toLowerCase());
-    if (found && found.icon) {
-      return found.icon;
-    }
-    return getSmartDocumentIcon(docTypeName);
-  };
+      const matchesSearch =
+        empName.includes(q) ||
+        empCompany.toLowerCase().includes(q) ||
+        docName.includes(q) ||
+        docNum.includes(q);
+      const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
+      const matchesCompany = companyFilter === 'all' || empCompany === companyFilter;
 
-  const filteredDocuments = documents.filter((doc) => {
-    const emp = getEmployee(doc.employee_id);
-    const empName = (emp ? emp.full_name : 'Team Member').toLowerCase();
-    const empCompany = emp ? (emp.location || 'Global Headquarters') : '';
-    const docName = (doc.document_type_name || '').toLowerCase();
-    const docNum = (doc.document_number || '').toLowerCase();
-    const q = search.toLowerCase();
+      if (!matchesSearch || !matchesStatus || !matchesCompany) return;
 
-    const matchesSearch = empName.includes(q) || empCompany.toLowerCase().includes(q) || docName.includes(q) || docNum.includes(q);
-    const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || docName.includes(categoryFilter.toLowerCase());
-    const matchesCompany = companyFilter === 'all' || empCompany === companyFilter;
+      if (!map.has(emp.id)) map.set(emp.id, { employee: emp, docs: [] });
+      map.get(emp.id)!.docs.push(doc);
+    });
+    return Array.from(map.values());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documents, employees, search, statusFilter, companyFilter]);
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesCompany;
-  });
-
-  const getStatusBadge = (status: string) => {
-    if (status === 'expired') {
-      return (
-        <span className={cn(typography.label.sm, "px-3 py-1 bg-red-100 text-red-700 rounded-full flex items-center gap-1 font-bold")}>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-          Expired
-        </span>
-      );
-    }
-    if (status === 'expiring_soon') {
-      return (
-        <span className={cn(typography.label.sm, "px-3 py-1 bg-orange-100 text-orange-700 rounded-full flex items-center gap-1 font-bold")}>
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-          Expiring Soon
-        </span>
-      );
-    }
-    return (
-      <span className={cn(typography.label.sm, "px-3 py-1 bg-green-100 text-green-700 rounded-full flex items-center gap-1 font-bold")}>
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-        Active
-      </span>
-    );
-  };
+  const totalExpired = documents.filter((d) => d.status === 'expired').length;
+  const totalExpiring = documents.filter((d) => d.status === 'expiring_soon').length;
 
   return (
     <>
       <div className="p-container-margin pb-24 md:pb-8 space-y-section-spacing">
-        {/* Page Header & Actions */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h3 className={cn(typography.heading.h1, "text-on-surface")}>Document Repository</h3>
+              <h3 className={cn(typography.heading.h1, 'text-on-surface')}>Document Repository</h3>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/40 border border-white/60 shadow-sm">
-                <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                <span className={cn(typography.caption.sm, "text-on-surface font-medium")}>
-                  {isLive ? "Supabase Live DB" : "Local"}
+                <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                <span className={cn(typography.caption.sm, 'text-on-surface font-medium')}>
+                  {isLive ? 'Supabase Live DB' : 'Local'}
                 </span>
               </div>
             </div>
-            <p className={cn(typography.body.md, "text-on-surface-variant mt-1")}>
+            <p className={cn(typography.body.md, 'text-on-surface-variant mt-1')}>
               Manage and browse all employee credentials across the global workspace.
             </p>
           </div>
-          <div className="flex gap-3">
-            <button 
-              className={cn(typography.button.md, "flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full shadow-lg shadow-primary/30 hover:brightness-110 transition-all active:scale-95")}
-              onClick={openNewDocModal}
-            >
-              <span className="material-symbols-outlined">add</span>
-              New Document
-            </button>
-          </div>
+          <button
+            className={cn(typography.button.md, 'flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full shadow-lg shadow-primary/30 hover:brightness-110 transition-all active:scale-95')}
+            onClick={openNewDocModal}
+          >
+            <span className="material-symbols-outlined">add</span>
+            New Document
+          </button>
         </div>
 
-        {/* Search & Filters */}
-        <section className="glass-panel-heavy p-6 rounded-lg flex flex-col md:flex-row gap-4 items-center">
+        <section className="glass-panel-heavy p-6 rounded-2xl flex flex-col md:flex-row gap-4 items-center">
           <div className="w-full md:flex-1 relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">search</span>
             <input
-              className={cn(typography.body.md, "w-full pl-12 pr-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none")}
+              className={cn(typography.body.md, 'w-full pl-12 pr-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none')}
               placeholder="Search by name, document ID, or employee..."
               type="text"
               value={search}
@@ -137,7 +231,7 @@ export default function DocumentsPage() {
           </div>
           <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
             <select
-              className={cn(typography.label.md, "px-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none min-w-[140px]")}
+              className={cn(typography.label.md, 'px-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none min-w-[140px]')}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -146,127 +240,65 @@ export default function DocumentsPage() {
               <option value="expiring_soon">Expiring Soon</option>
               <option value="expired">Expired</option>
             </select>
-
             <select
-              className={cn(typography.label.md, "px-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none min-w-[140px]")}
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              {documentTypes.map((dt) => (
-                <option key={dt.id} value={dt.name}>
-                  {dt.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className={cn(typography.label.md, "px-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none min-w-[140px]")}
+              className={cn(typography.label.md, 'px-4 py-3 bg-white/40 border border-white/40 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none min-w-[140px]')}
               value={companyFilter}
               onChange={(e) => setCompanyFilter(e.target.value)}
             >
               <option value="all">All Companies</option>
               {branches.map((b) => (
-                <option key={b.id} value={b.name}>
-                  {b.name}
-                </option>
+                <option key={b.id} value={b.name}>{b.name}</option>
               ))}
             </select>
           </div>
         </section>
 
-        <div className="flex flex-col lg:flex-row gap-section-spacing">
-          {/* Document Grid */}
-          <div className="flex-1">
-            {filteredDocuments.length === 0 ? (
-              <div className="glass-panel p-12 rounded-lg text-center">
-                <span className="material-symbols-outlined text-[48px] text-on-surface-variant opacity-40 mb-2">folder_open</span>
-                <p className={cn(typography.heading.h3, "text-on-surface")}>No documents found in repository</p>
-                <p className={cn(typography.body.md, "text-on-surface-variant mt-1 mb-6")}>
-                  Upload a new document to assign it to an employee.
-                </p>
-                <button
-                  onClick={openNewDocModal}
-                  className={cn(typography.button.md, "px-6 py-2.5 bg-primary text-white rounded-full shadow-md")}
-                >
-                  Upload First Document
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-stack-gap">
-                {filteredDocuments.map((doc) => (
-                  <div key={doc.id} className="glass-panel p-card-padding rounded-lg flex flex-col group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                        <span className="material-symbols-outlined text-[28px]">
-                          {getDocIcon(doc.document_type_name)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {getStatusBadge(doc.status)}
-                        <button
-                          onClick={() => openEditModal(doc)}
-                          className="p-1 text-on-surface-variant hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
-                          title="Edit Document"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">edit</span>
-                        </button>
-                        <button
-                          onClick={() => deleteDocument(doc.id)}
-                          className="p-1 text-on-surface-variant hover:text-error rounded-full hover:bg-error/10 transition-colors"
-                          title="Delete Document"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                    <h4 className={cn(typography.heading.h3, "text-on-surface mb-1 truncate")}>{doc.document_type_name}</h4>
-                    <p className={cn(typography.body.md, "text-on-surface-variant mb-1")}>Employee: {getEmployeeName(doc.employee_id)}</p>
-                    <p className={cn(typography.caption.sm, "text-on-surface-variant/80 mb-2 font-medium")}>{getEmployeeCompany(doc.employee_id)}</p>
-                    {doc.document_number && (
-                      <p className={cn(typography.caption.sm, "text-outline mb-4 font-mono")}>No: {doc.document_number}</p>
-                    )}
-                    <div className={cn(typography.label.md, "flex items-center justify-between text-on-surface-variant mt-auto pt-4 border-t border-white/20")}>
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                        <span>Exp: {formatDisplayDate(doc.expiry_date)}</span>
-                      </div>
-                      {doc.issuing_country && (
-                        <span className="text-xs px-2 py-0.5 bg-surface-container/60 rounded font-semibold text-on-surface-variant">
-                          {doc.issuing_country}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar: Repository Stats */}
-          <aside className="w-full lg:w-80 space-y-stack-gap">
-            <div className="bg-primary text-white p-6 rounded-lg relative overflow-hidden shadow-xl shadow-primary/20">
-              <div className="relative z-10">
-                <p className={cn(typography.caption.sm, "uppercase font-bold tracking-widest opacity-80 mb-1")}>Total Repository</p>
-                <h3 className={cn(typography.number.large, "mb-4")}>{documents.length} Docs</h3>
-                <div className="flex items-center gap-2">
-                  <span className={cn(typography.label.sm, "flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full")}>
-                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                    {documents.filter((d) => d.status === 'valid').length} Active
-                  </span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-10">folder_managed</span>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: 'Total Documents', value: documents.length, color: 'text-primary', bg: 'bg-primary/10' },
+            { label: 'Expired', value: totalExpired, color: 'text-red-600', bg: 'bg-red-50' },
+            { label: 'Expiring Soon', value: totalExpiring, color: 'text-orange-600', bg: 'bg-orange-50' },
+          ].map((s) => (
+            <div key={s.label} className={cn('rounded-2xl p-4 flex items-center gap-4 glass-panel', s.bg)}>
+              <span className={cn(typography.number.large, s.color)}>{s.value}</span>
+              <span className={cn(typography.label.md, 'text-on-surface-variant')}>{s.label}</span>
             </div>
-          </aside>
+          ))}
         </div>
+
+        {grouped.length === 0 ? (
+          <div className="glass-panel p-12 rounded-2xl text-center">
+            <span className="material-symbols-outlined text-[48px] text-on-surface-variant opacity-40 mb-2">folder_open</span>
+            <p className={cn(typography.heading.h3, 'text-on-surface')}>No documents found in repository</p>
+            <p className={cn(typography.body.md, 'text-on-surface-variant mt-1 mb-6')}>
+              Upload a new document to assign it to an employee.
+            </p>
+            <button
+              onClick={openNewDocModal}
+              className={cn(typography.button.md, 'px-6 py-2.5 bg-primary text-white rounded-full shadow-md')}
+            >
+              Upload First Document
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-stack-gap">
+            {grouped.map(({ employee, docs }) => (
+              <EmployeeDocCard
+                key={employee.id}
+                employee={employee}
+                docs={docs}
+                onEdit={openEditModal}
+                onDelete={deleteDocument}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      <UploadDocumentModal 
-        isOpen={isUploadModalOpen} 
+      <UploadDocumentModal
+        isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         editingDocument={editingDoc}
       />
     </>
   );
 }
-

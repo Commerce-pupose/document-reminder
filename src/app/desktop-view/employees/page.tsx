@@ -399,7 +399,7 @@ export default function EmployeesPage() {
             <div className="flex items-center gap-2 mt-1">
               <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-primary animate-pulse"}`}></span>
               <p className={cn(typography.body.md, "text-on-surface-variant")}>
-                {employees.length} active team members {isLive ? "(Supabase DB)" : "(Local)"}
+                {employees.length} active team members
               </p>
             </div>
           </div>
